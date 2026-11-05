@@ -67,14 +67,26 @@ export function Blog() {
         {POSTS.map((post) => (
           <li key={post.title}>
             <article className="flex h-full flex-col overflow-hidden rounded-sm bg-surface">
-              <img src={post.image} alt="" width={268} height={180} loading="lazy" decoding="async" className="h-[180px] w-full object-cover object-top" />
-              <div className="flex flex-1 flex-col gap-3 p-4">
-                <p className="text-[11px] text-brand">
-                  <time>{post.date}</time> <span aria-hidden>|</span> Leitura de {post.read}
+              <img
+                src={post.image}
+                alt=""
+                width={281}
+                height={205}
+                loading="lazy"
+                decoding="async"
+                className="aspect-[281/205] w-full rounded-t-sm object-cover object-center"
+              />
+              <div className="flex flex-1 flex-col gap-3 px-4 pt-4 pb-5">
+                <p className="text-[13px] leading-5 text-sand">
+                  <time>{post.date}</time>
+                  <span aria-hidden className="mx-2">
+                    |
+                  </span>
+                  Leitura de {post.read}
                 </p>
-                <h3 className="text-sm leading-5 font-bold text-cream">{post.title}</h3>
-                <p className="text-xs leading-5 text-brand">{post.text}</p>
-                <SoonLink label={`Artigo "${post.title}"`} className="mt-auto text-xs font-bold text-brand">
+                <h3 className="text-[17px] leading-6 font-bold text-cream">{post.title}</h3>
+                <p className="text-[13px] leading-[22px] text-brand">{post.text}</p>
+                <SoonLink label={`Artigo "${post.title}"`} className="mt-auto pt-1 text-[13px] font-bold text-brand">
                   Ler mais <span aria-hidden>→</span>
                   <span className="sr-only">: {post.title}</span>
                 </SoonLink>
