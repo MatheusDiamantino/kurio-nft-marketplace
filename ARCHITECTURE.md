@@ -14,7 +14,7 @@ src/
   router.tsx   rotas do TanStack Router
   components/  layout, componentes shadcn adaptados e compartilhados
   pages/       telas
-  mocks/       servidor simulado (dados, handlers REST, Socket.IO, cenários e painel)
+  mocks/       servidor simulado (dados, handlers REST, Socket.IO, cenários e controle pelo console)
 tests/         Playwright
 scripts/       auditoria Lighthouse
 ```
@@ -196,7 +196,7 @@ Latências: `none` (0 ms), `fast` (150 a 300 ms, padrão), `slow` (2,5 s) e `var
 5. **Tempo real cai com pedido pendente.** Use `?scenario=payment-hold`, confirme a compra e rode `__kurio.realtime.drop()`. Recarregue a página, rode `__kurio.realtime.restore()` e depois `__kurio.resolveOrder('<id>', 'confirmed')`. O recibo aparece sem pedido duplicado.
 6. **Sessão expira no checkout.** Com o checkout aberto, rode `__kurio.expireSessions()` e faça qualquer ação. Você vai para o login e, ao entrar, volta ao checkout com tudo preenchido.
 7. **Evento repetido ou antigo.** Rode `__kurio.realtime.replayLast()` ou `__kurio.realtime.sendStale('emerald-ape-042')`. Nada muda na tela.
-8. **Erro e nova tentativa.** Com `?scenario=catalog-error&latency=slow`, você vê o carregamento e depois o erro. Mude para `default` no painel e clique em **Tentar novamente**.
+8. **Erro e nova tentativa.** Com `?scenario=catalog-error&latency=slow`, você vê o carregamento e depois o erro. Rode `__kurio.setConfig({ scenario: 'default' })` no console e clique em **Tentar novamente**.
 
 ## Acessibilidade
 

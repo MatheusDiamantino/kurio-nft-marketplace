@@ -38,7 +38,7 @@ Se quiser desligar os mocks e apontar para uma API real, crie um `.env.local` co
 
 ## Simulando cenários
 
-Para testar falhas, lentidão e casos de borda, use o painel **Mock** no canto inferior esquerdo da tela. Também dá para passar o cenário na URL, por exemplo `?scenario=payment-declined&latency=slow`.
+Para testar falhas, lentidão e casos de borda, passe o cenário na URL, por exemplo `?scenario=payment-declined&latency=slow`. A escolha fica salva até você trocar ou resetar.
 
 Os cenários mais úteis:
 
@@ -50,7 +50,7 @@ Os cenários mais úteis:
 - `payment-declined` e `payment-hold`: pagamento recusado ou parado em pendente.
 - `session-expired`, `wallet-reject` e `validation-error`.
 
-A latência pode ser `none`, `fast` (padrão), `slow` ou `variable`. Para voltar ao estado inicial, use `?mock-reset=1` ou o botão **Resetar dados** do painel.
+A latência pode ser `none`, `fast` (padrão), `slow` ou `variable`. Para voltar ao estado inicial, use `?mock-reset=1` ou `__kurio.reset()` no console.
 
 No console, `window.__kurio` permite mudar o preço de um NFT, expirar a sessão, derrubar o Socket.IO e resolver pedidos pendentes. Por exemplo:
 

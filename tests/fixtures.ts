@@ -20,7 +20,7 @@ export class App {
   constructor(readonly page: Page) {}
 
   async open(path = '/', opts: OpenOptions = {}) {
-    const params = new URLSearchParams({ 'mock-reset': '1', latency: opts.latency ?? 'none', mockPanel: '0' })
+    const params = new URLSearchParams({ 'mock-reset': '1', latency: opts.latency ?? 'none' })
     if (opts.scenario) params.set('scenario', opts.scenario)
     params.set('orderResolutionMs', String(opts.orderResolutionMs ?? 600))
     const [pathname, query = ''] = path.split('?')

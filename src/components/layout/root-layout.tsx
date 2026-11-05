@@ -1,4 +1,3 @@
-import { lazy, Suspense } from 'react'
 import { Outlet } from '@tanstack/react-router'
 import { Toaster } from '@/components/ui/sonner'
 import { SoonHint } from '@/components/soon'
@@ -8,8 +7,6 @@ import { MobileTabBar, MobileTopBar } from './mobile-nav'
 import { RealtimeIndicator } from './realtime-indicator'
 import { RouteProgress } from './route-status'
 import { SessionEffects } from './session-effects'
-
-const MockPanel = lazy(() => import('@/mocks/mock-panel').then((m) => ({ default: m.MockPanel })))
 
 export function RootLayout() {
   return (
@@ -32,11 +29,6 @@ export function RootLayout() {
       <SessionEffects />
       <SoonHint />
       <Toaster />
-      {import.meta.env.VITE_ENABLE_MOCKS !== 'false' && (
-        <Suspense fallback={null}>
-          <MockPanel />
-        </Suspense>
-      )}
     </>
   )
 }
