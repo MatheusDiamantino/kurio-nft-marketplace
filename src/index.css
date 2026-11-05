@@ -106,6 +106,10 @@
   }
   html {
     color-scheme: dark;
+    /* Smooth in-page scrolling (anchors, "Explorar", pagination). Route changes
+       stay instant (router scrollRestorationBehavior) and prefers-reduced-motion
+       disables it below. */
+    scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
   }
   body {

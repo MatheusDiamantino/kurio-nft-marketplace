@@ -131,6 +131,9 @@ export function createAppRouter(queryClient: QueryClient) {
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
     scrollRestoration: true,
+    // Page-to-page navigation jumps to the top instantly; smooth scrolling is
+    // reserved for in-page anchors (see html { scroll-behavior } in index.css).
+    scrollRestorationBehavior: 'instant',
     defaultNotFoundComponent: NotFoundPage,
   })
 }
