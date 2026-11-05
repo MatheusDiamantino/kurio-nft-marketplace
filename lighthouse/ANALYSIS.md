@@ -34,5 +34,5 @@ Todas as outras metas foram atingidas.
 
 ## Pontos de atenção
 
-- **O LCP mobile (~2,8 s) ainda carrega o custo da camada de mocks:** registrar e ativar o service worker do MSW e executar o chunk `browser` (cerca de 550 ms de script com a CPU 4x mais lenta, antes do stub). Isso é necessário para que nenhuma requisição escape da simulação e para que o `engine.io-client` capture o WebSocket já interceptado. Com um backend real (`VITE_ENABLE_MOCKS=false`), essa etapa deixa de existir.
-- **TBT mobile entre 170 e 230 ms:** parse e execução do React, do TanStack e do MSW. O código das rotas já é separado (lazy routes): a página inicial não carrega checkout, conta nem formulários.
+- **O LCP mobile (2,7 a 3,0 s na rodada versionada) ainda carrega o custo da camada de mocks:** registrar e ativar o service worker do MSW e executar o chunk `browser` (cerca de 550 ms de script com a CPU 4x mais lenta, antes do stub). Isso é necessário para que nenhuma requisição escape da simulação e para que o `engine.io-client` capture o WebSocket já interceptado. Com um backend real (`VITE_ENABLE_MOCKS=false`), essa etapa deixa de existir.
+- **TBT mobile entre 190 e 410 ms na rodada versionada:** parse e execução do React, do TanStack e do MSW. O código das rotas já é separado (lazy routes): a página inicial não carrega checkout, conta nem formulários.
