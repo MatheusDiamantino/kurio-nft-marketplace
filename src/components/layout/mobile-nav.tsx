@@ -10,7 +10,9 @@ export function MobileTopBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   // Home and NFT detail draw their own mobile chrome (search bar / hero) per the Figma.
   // Login/Cadastro mobile are full-screen with their own big logo.
-  if (pathname === '/' || pathname.startsWith('/nft/') || pathname === '/login' || pathname === '/register') return null
+  // Cart and checkout have their own mobile header (back button + title) per the Figma mobile frames.
+  const own = ['/', '/login', '/register', '/cart', '/checkout']
+  if (own.includes(pathname) || pathname.startsWith('/nft/')) return null
   return (
     <div className="flex h-14 items-center justify-between border-b border-line px-4 md:hidden">
       <Logo />

@@ -378,11 +378,11 @@ export function CheckoutPage() {
                   <li key={`${l.nftId}:${l.editionId}`} className="flex items-center gap-3 bg-surface p-1 pr-4">
                     <img src={l.image} alt="" width={62} height={62} className="size-[62px] shrink-0 rounded-sm object-cover" />
                     <div className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate text-[15px] font-bold text-cream">{l.name}</span>
-                      <span className="text-sm text-tan">ID do token: {l.tokenId}</span>
+                      <span className="text-sm font-bold text-cream sm:truncate sm:text-[15px]">{l.name}</span>
+                      <span className="text-xs whitespace-nowrap text-tan sm:text-sm">ID do token: {l.tokenId}</span>
                     </div>
-                    <span className="text-sm text-sand">(x {l.quantity})</span>
-                    <span className="text-[15px] font-bold text-brand tabular-nums">{formatEth(l.lineTotal)}</span>
+                    <span className="text-sm whitespace-nowrap text-sand">(x {l.quantity})</span>
+                    <span className="text-[15px] font-bold whitespace-nowrap text-brand tabular-nums">{formatEth(l.lineTotal)}</span>
                   </li>
                 ))}
               </ul>

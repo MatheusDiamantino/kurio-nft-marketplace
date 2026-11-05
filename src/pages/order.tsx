@@ -203,7 +203,7 @@ function Receipt({ order, headingRef }: { order: Order; headingRef: HeadingRef }
               <th scope="col" className="pb-2 font-bold">
                 NFTs
               </th>
-              <th scope="col" className="pb-2 text-center font-bold">
+              <th scope="col" className="hidden pb-2 text-center font-bold sm:table-cell">
                 Edições
               </th>
               <th scope="col" className="pb-2 text-right font-bold">
@@ -216,15 +216,16 @@ function Receipt({ order, headingRef }: { order: Order; headingRef: HeadingRef }
               <tr key={`${l.nftId}:${l.editionId}`} data-testid="receipt-line">
                 <td className="pt-3">
                   <div className="flex items-center gap-3">
-                    <img src={l.image} alt="" width={66} height={66} className="size-[66px] shrink-0 rounded-sm object-cover" />
+                    <img src={l.image} alt="" width={66} height={66} className="size-12 shrink-0 rounded-sm object-cover sm:size-[66px]" />
                     <div className="flex min-w-0 flex-col">
-                      <span className="text-[15px] font-bold text-cream">{l.name}</span>
-                      <span className="text-sm text-tan">ID do token: {l.tokenId}</span>
+                      <span className="text-sm font-bold text-cream sm:text-[15px]">{l.name}</span>
+                      <span className="text-xs whitespace-nowrap text-tan sm:text-sm">ID do token: {l.tokenId}</span>
+                      <span className="text-xs text-sand sm:hidden">Edições: x {l.quantity}</span>
                     </div>
                   </div>
                 </td>
-                <td className="pt-3 text-center text-sm text-sand">(x {l.quantity})</td>
-                <td className="pt-3 text-right text-[17px] font-bold text-brand tabular-nums">{formatEth(l.lineTotal)}</td>
+                <td className="hidden pt-3 text-center text-sm whitespace-nowrap text-sand sm:table-cell">(x {l.quantity})</td>
+                <td className="pt-3 text-right text-[15px] font-bold whitespace-nowrap text-brand tabular-nums sm:text-[17px]">{formatEth(l.lineTotal)}</td>
               </tr>
             ))}
           </tbody>

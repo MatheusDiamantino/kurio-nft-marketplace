@@ -61,8 +61,9 @@ export function WalletPicker({
     <div className="flex flex-col gap-3">
       <fieldset className="flex flex-col gap-3">
         <legend className="sr-only">Carteira para pagamento</legend>
-        <div className="flex h-[45px] items-center gap-3 rounded-sm border border-line px-4" aria-hidden>
-          <span className="size-4 rounded-full border border-brand" />
+        {/* Figma's first row: informative only (compatible wallets), not a selectable option. */}
+        <div className="flex min-h-[45px] flex-wrap items-center gap-3 rounded-sm border border-dashed border-line px-4 py-2">
+          <span className="text-xs text-tan">Compatíveis:</span>
           <WalletChip />
         </div>
         {wallets.map((w) => {
