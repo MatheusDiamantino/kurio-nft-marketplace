@@ -62,7 +62,6 @@ export function QuoteChangedAlert({ before, after, onAccept }: { before: Quote; 
       ref={ref}
       tabIndex={-1}
       role="alert"
-      data-testid="quote-changed"
       className="flex flex-col gap-3 rounded-sm border-2 border-brand bg-surface-dark/70 p-4 text-sm text-cream outline-none"
     >
       <p className="flex items-center gap-2 font-bold text-brand">

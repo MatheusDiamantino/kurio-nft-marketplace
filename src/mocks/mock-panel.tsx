@@ -52,7 +52,7 @@ export function MockPanel() {
                 >
                   {Object.entries(k.scenarios).map(([id, label]) => (
                     <option key={id} value={id}>
-                      {id} — {label}
+                      {id} - {label}
                     </option>
                   ))}
                 </select>
@@ -66,7 +66,7 @@ export function MockPanel() {
                 >
                   {Object.entries(k.latencies).map(([id, label]) => (
                     <option key={id} value={id}>
-                      {id} — {label}
+                      {id} - {label}
                     </option>
                   ))}
                 </select>
@@ -102,7 +102,7 @@ export function MockPanel() {
                 </button>
               </div>
               <p className="text-[11px] leading-4 text-tan">
-                Também via URL: <code>?scenario=…&amp;latency=…</code>, <code>?mock-reset=1</code>. Console: <code>window.__kurio</code>.
+                Também via URL: <code>?scenario=...&amp;latency=...</code>, <code>?mock-reset=1</code>. Console: <code>window.__kurio</code>.
               </p>
             </div>
           )}

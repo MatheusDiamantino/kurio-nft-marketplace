@@ -138,7 +138,7 @@ export function LoginForm({ variant, onSuccess }: { variant: AuthVariant; onSucc
         </button>
       </div>
       <div className={variant === 'page' ? 'mt-4' : 'mt-2'}>
-        <SubmitButton variant={variant} pending={login.isPending} label="Entrar" pendingLabel="Entrando…" />
+        <SubmitButton variant={variant} pending={login.isPending} label="Entrar" pendingLabel="Entrando..." />
       </div>
       <p className="text-center text-[11px] text-tan">Conta demo já preenchida: ana@kurio.dev / Kurio@123 (ou bruno@kurio.dev)</p>
     </form>
@@ -227,7 +227,7 @@ export function RegisterForm({ variant, onSuccess }: { variant: AuthVariant; onS
           variant={variant}
           pending={register.isPending}
           label={variant === 'page' ? 'Criar perfil' : 'Criar conta'}
-          pendingLabel="Criando…"
+          pendingLabel="Criando..."
         />
       </div>
     </form>

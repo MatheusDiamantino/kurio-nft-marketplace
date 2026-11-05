@@ -5,7 +5,7 @@ import { Hero } from '@/components/home/hero'
 
 export function HomePage() {
   useEffect(() => {
-    document.title = 'Kurio — Marketplace de NFTs'
+    document.title = 'Kurio | Marketplace de NFTs'
   }, [])
 
   return (

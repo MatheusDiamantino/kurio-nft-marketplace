@@ -19,11 +19,11 @@ export const NETWORK_LABEL: Record<Network, string> = {
 }
 
 export function shortAddress(address: string) {
-  return address.length > 12 ? `${address.slice(0, 6)}…${address.slice(-4)}` : address
+  return address.length > 12 ? `${address.slice(0, 6)}...${address.slice(-4)}` : address
 }
 
 export function walletLabel(w: Wallet) {
-  return `${WALLET_LABEL[w.kind]} — ${w.nickname} — ${shortAddress(w.address)}`
+  return `${WALLET_LABEL[w.kind]} - ${w.nickname} - ${shortAddress(w.address)}`
 }
 
 export function WalletPicker({
@@ -83,7 +83,7 @@ export function WalletPicker({
                   {WALLET_LABEL[w.kind]} <span className="text-sand">· {w.slot === 'primary' ? 'principal' : 'secundária'}</span>
                 </span>
                 <span className="truncate text-xs text-tan">
-                  {w.nickname} — {shortAddress(w.address)}
+                  {w.nickname} - {shortAddress(w.address)}
                 </span>
               </span>
             </label>
@@ -95,7 +95,7 @@ export function WalletPicker({
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-sm bg-surface px-3 py-2" aria-live="polite">
         {connected ? (
           <>
-            <p className="flex items-center gap-2 text-sm text-success" data-testid="wallet-status">
+            <p className="flex items-center gap-2 text-sm text-success">
               <CheckCircle2 className="size-4" aria-hidden />
               Conectada em {NETWORK_LABEL[network]}
             </p>
@@ -106,12 +106,12 @@ export function WalletPicker({
           </>
         ) : (
           <>
-            <p className="text-sm text-sand" data-testid="wallet-status">
+            <p className="text-sm text-sand">
               Carteira não conectada
             </p>
             <Button type="button" variant="outline" size="sm" onClick={onConnect} disabled={!selectedId || connecting}>
               <Plug aria-hidden />
-              {connecting ? 'Conectando…' : 'Conectar carteira'}
+              {connecting ? 'Conectando...' : 'Conectar carteira'}
             </Button>
           </>
         )}

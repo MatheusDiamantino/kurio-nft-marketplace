@@ -28,7 +28,7 @@ export function WalletsPage() {
   const showSecondary = !!secondary || addingSecondary
 
   useEffect(() => {
-    document.title = 'Carteiras — Kurio'
+    document.title = 'Carteiras | Kurio'
   }, [])
 
   return (

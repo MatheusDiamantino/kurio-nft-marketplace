@@ -73,7 +73,7 @@ function DesktopDetail({ nft, p }: { nft: NftDetail; p: Purchase }) {
                 disabled={!!p.blockedReason || p.adding}
                 className="h-9 w-[115px] rounded-sm bg-brand text-sm font-bold tracking-[0.04em] text-ink hover:bg-brand-accent disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {p.adding ? 'ADICIONANDO…' : p.blockedReason === 'Esgotado' ? 'ESGOTADO' : 'COMPRAR'}
+                {p.adding ? 'ADICIONANDO...' : p.blockedReason === 'Esgotado' ? 'ESGOTADO' : 'COMPRAR'}
               </button>
               <FavoriteButton
                 p={p}
@@ -172,7 +172,7 @@ function MobileDetail({ nft, p }: { nft: NftDetail; p: Purchase }) {
             disabled={!!p.blockedReason || p.adding}
             className="h-[56px] flex-1 rounded-full bg-gradient-to-r from-brand-soft to-brand text-base font-bold text-ink hover:to-brand-accent disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {p.adding ? 'Adicionando…' : p.blockedReason === 'Esgotado' ? 'Esgotado' : 'Comprar NFT'}
+            {p.adding ? 'Adicionando...' : p.blockedReason === 'Esgotado' ? 'Esgotado' : 'Comprar NFT'}
           </button>
           <button
             type="button"
@@ -192,7 +192,7 @@ function MobileDetail({ nft, p }: { nft: NftDetail; p: Purchase }) {
 function NftDetailView({ nft }: { nft: NftDetail }) {
   const p = usePurchase(nft)
   useEffect(() => {
-    document.title = `${nft.name} — Kurio`
+    document.title = `${nft.name} | Kurio`
   }, [nft.name])
   return (
     <>
@@ -212,7 +212,7 @@ export function NftDetailPage() {
     return (
       <div aria-busy="true">
         <p className="sr-only" role="status">
-          Carregando NFT…
+          Carregando NFT...
         </p>
         <DetailSkeleton />
       </div>

@@ -16,7 +16,7 @@ export function scrollToCatalog() {
 
 export function Logo({ className }: { className?: string }) {
   return (
-    <Link to="/" className={cn('text-sm font-bold tracking-[0.1em] text-cream', className)} aria-label="Kurio — página inicial">
+    <Link to="/" className={cn('text-sm font-bold tracking-[0.1em] text-cream', className)} aria-label="Kurio, página inicial">
       KURIO
     </Link>
   )
@@ -34,7 +34,6 @@ export function CartButton({ className }: { className?: string }) {
       <ShoppingCart className="size-6" aria-hidden />
       {count > 0 && (
         <span
-          data-testid="cart-count"
           className="absolute top-0.5 right-0 grid min-w-4 place-items-center rounded-full bg-brand px-1 text-[10px] leading-4 font-medium text-ink"
         >
           {count > 99 ? '99+' : count}
@@ -88,7 +87,7 @@ function HeaderSearch() {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
-        placeholder="Buscar NFTs…"
+        placeholder="Buscar NFTs..."
         className="h-9 w-48 rounded-sm border border-line-soft bg-surface px-3 text-sm text-cream placeholder:text-tan focus:border-brand-accent"
       />
       <button type="submit" className="inline-flex size-9 items-center justify-center text-cream hover:text-brand-accent" aria-label="Buscar">

@@ -71,7 +71,7 @@ export function AccountLayout() {
                 className={cn(itemClass, 'w-full font-bold')}
               >
                 <LogOut className="size-5" aria-hidden />
-                {logout.isPending ? 'Saindo…' : 'Sair'}
+                {logout.isPending ? 'Saindo...' : 'Sair'}
               </button>
             </li>
           </ul>

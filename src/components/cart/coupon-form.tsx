@@ -39,10 +39,10 @@ export function CouponForm({ coupon }: { coupon: AppliedCoupon | null }) {
       <div className="flex flex-col gap-2">
         <p className="text-sm font-bold text-cream">Código promocional</p>
         <div className="flex items-center justify-between gap-3 rounded-sm border border-brand bg-surface-dark/50 px-3 py-2">
-          <p className="flex items-center gap-2 text-sm text-cream" data-testid="applied-coupon">
+          <p className="flex items-center gap-2 text-sm text-cream">
             <Tag className="size-4 text-brand" aria-hidden />
             <span>
-              <strong className="text-brand">{coupon.code}</strong> — {coupon.description}
+              <strong className="text-brand">{coupon.code}</strong> - {coupon.description}
             </span>
           </p>
           <button
@@ -81,7 +81,7 @@ export function CouponForm({ coupon }: { coupon: AppliedCoupon | null }) {
           disabled={apply.isPending}
           className="rounded-r-sm bg-brand px-5 text-[15px] font-bold text-ink hover:bg-brand-accent disabled:opacity-60"
         >
-          {apply.isPending ? 'Aplicando…' : 'Aplicar'}
+          {apply.isPending ? 'Aplicando...' : 'Aplicar'}
         </button>
       </div>
       {error && (

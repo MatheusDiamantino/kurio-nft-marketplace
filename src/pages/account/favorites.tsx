@@ -9,7 +9,7 @@ export function FavoritesPage() {
   const items = favorites.data?.items ?? []
 
   useEffect(() => {
-    document.title = 'Lista de interesse — Kurio'
+    document.title = 'Lista de interesse | Kurio'
   }, [])
 
   return (
@@ -39,7 +39,7 @@ export function FavoritesPage() {
           }
         />
       ) : (
-        <ul className="grid grid-cols-2 gap-4 lg:grid-cols-3 lg:gap-7" data-testid="favorites-grid">
+        <ul className="grid grid-cols-2 gap-4 lg:grid-cols-3 lg:gap-7">
           {items.map((nft) => (
             <li key={nft.id}>
               <NftCard nft={nft} />

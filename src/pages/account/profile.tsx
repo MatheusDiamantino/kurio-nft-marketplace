@@ -115,7 +115,7 @@ function AvatarEditor() {
           disabled={busy}
           className="h-10 rounded-[2px] bg-brand px-6 text-sm font-bold text-ink hover:bg-brand-accent disabled:opacity-60"
         >
-          {setAvatar.isPending ? 'Enviando…' : 'Alterar'}
+          {setAvatar.isPending ? 'Enviando...' : 'Alterar'}
         </button>
         <button
           type="button"
@@ -123,7 +123,7 @@ function AvatarEditor() {
           disabled={busy || !user?.avatarUrl}
           className="h-10 px-2 text-sm text-cream hover:text-brand-accent disabled:opacity-50"
         >
-          {removeAvatar.isPending ? 'Removendo…' : 'Remover'}
+          {removeAvatar.isPending ? 'Removendo...' : 'Remover'}
         </button>
       </div>
       {error && (
@@ -156,7 +156,7 @@ export function ProfilePage() {
   const [formError, setFormError] = useState<string | null>(null)
 
   useEffect(() => {
-    document.title = 'Perfil do colecionador — Kurio'
+    document.title = 'Perfil do colecionador | Kurio'
   }, [])
 
   const form = useForm<Values>({
@@ -281,7 +281,7 @@ export function ProfilePage() {
               aria-busy={isSubmitting}
               className="h-10 min-w-[131px] rounded-[2px] bg-brand px-6 text-sm font-bold text-ink hover:bg-brand-accent disabled:opacity-60"
             >
-              {isSubmitting ? 'Salvando…' : 'Salvar'}
+              {isSubmitting ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
         </form>

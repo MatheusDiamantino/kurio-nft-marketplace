@@ -204,7 +204,7 @@ export function WalletForm({
           aria-busy={isSubmitting}
           className="h-10 rounded-[2px] bg-brand px-1 text-sm font-bold text-ink hover:bg-brand-accent disabled:opacity-60"
         >
-          {isSubmitting ? 'Salvando…' : 'Salvar carteira'}
+          {isSubmitting ? 'Salvando...' : 'Salvar carteira'}
         </button>
       </div>
     </form>

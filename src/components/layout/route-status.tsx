@@ -30,7 +30,7 @@ export function RouteProgress() {
 export function RoutePending() {
   return (
     <div className="container-page flex min-h-[50vh] items-center justify-center" role="status" aria-live="polite">
-      <span className="sr-only">Carregando página…</span>
+      <span className="sr-only">Carregando página...</span>
       <span aria-hidden className="size-8 animate-spin rounded-full border-2 border-line-soft border-t-brand" />
     </div>
   )

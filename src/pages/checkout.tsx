@@ -77,7 +77,6 @@ export function CheckoutPage() {
   const draft = useMemo<Draft | null>(() => {
     const own = readDraft(uid)
     if (own || uid === GUEST) return own
-    
     const fromGuest = readDraft(GUEST)
     if (fromGuest) {
       try {
@@ -354,7 +353,7 @@ export function CheckoutPage() {
                       ['E-mail', form.getValues('email')],
                       ['Nome ENS', `${form.getValues('ensName')}${form.getValues('ensSuffix')}`],
                       ['Rede', NETWORK_LABEL[network]],
-                      ['Carteira', selectedWallet ? walletLabel(selectedWallet) : '—'],
+                      ['Carteira', selectedWallet ? walletLabel(selectedWallet) : '-'],
                     ] as const
                   ).map(([k, v]) => (
                     <div key={k} className="flex min-w-0 flex-col gap-0.5">
@@ -487,7 +486,7 @@ export function CheckoutPage() {
                 )}
               >
                 {busy && <Loader2 className="size-4 animate-spin" aria-hidden />}
-                {busy ? 'Confirmando…' : 'Confirmar compra'}
+                {busy ? 'Confirmando...' : 'Confirmar compra'}
               </button>
             </>
           )}
@@ -508,7 +507,7 @@ function OrderFeedback({
 }) {
   let content: ReactNode = null
   if (phase === 'recovering') {
-    content = <p className="text-sm text-sand">Não recebemos a confirmação, recuperando seu pedido…</p>
+    content = <p className="text-sm text-sand">Não recebemos a confirmação, recuperando seu pedido...</p>
   } else if (phase === 'failed' && error) {
     content = (
       <div className="flex flex-col gap-2 rounded-sm border border-danger p-3 text-sm text-cream">
@@ -526,7 +525,7 @@ function OrderFeedback({
     )
   }
   return (
-    <div role="status" aria-live="polite" data-testid="order-feedback">
+    <div role="status" aria-live="polite">
       {content}
     </div>
   )
