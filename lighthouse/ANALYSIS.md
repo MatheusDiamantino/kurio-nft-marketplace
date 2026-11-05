@@ -4,9 +4,15 @@ Os números estão em [`summary.md`](./summary.md) (mediana de 3 execuções por
 
 ## Resultado final
 
-Veja os números da última rodada em [`summary.md`](./summary.md). Na última medição: Performance mobile 92–93 e desktop 99–100; Accessibility 97 na Início e 100 no Detalhe; Best Practices e SEO 100. Todas as metas foram atingidas.
+Na rodada versionada em [`summary.md`](./summary.md):
 
-**Variação:** na mesma máquina, o TBT mobile variou de ~190 a ~440 ms entre execuções (Performance 84–93), conforme a carga do sistema. A mediana de 3 execuções, pedida pelo enunciado, absorve parte desse ruído. Rodadas com a máquina ocupada chegaram a medianas de 88–89.
+- Performance desktop: 100 na Início e 99 no Detalhe.
+- Performance mobile: 94 no Detalhe e 84 na Início. A Início mobile ficou abaixo da meta de 90 nessa rodada.
+- Accessibility: 97 na Início e 100 no Detalhe. Best Practices e SEO: 100.
+
+Todas as outras metas foram atingidas.
+
+**Variação:** na mesma máquina, a Performance da Início mobile variou entre 84 e 93 de uma rodada para outra, com o TBT entre ~190 e ~440 ms, conforme a carga do sistema. Mesmo a mediana de 3 execuções não elimina esse ruído. No relatório da Início mobile, o tempo vai quase todo para execução de script com a CPU 4x mais lenta: ~720 ms da app e ~680 ms do MSW (veja "Pontos de atenção").
 
 ## Condições
 
