@@ -5,16 +5,43 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#140d0a" />
-    <meta name="description" content="Kurio — marketplace de NFTs: descubra, colecione e compre arte digital de criadores emergentes e consagrados." />
-    <title>Kurio — Marketplace de NFTs</title>
+    <meta name="description" content="Marketplace de NFTs da Kurio. Descubra, colecione e compre arte digital de criadores emergentes e consagrados." />
+    <title>Kurio | Marketplace de NFTs</title>
     <link rel="preload" as="image" href="/nfts/emerald-ape.webp" type="image/webp" fetchpriority="high" />
     <style>
       html,body{background:#140d0a;color:#f5f1eb;margin:0}
-      .boot{min-height:100dvh;display:grid;place-items:center;font:700 14px/1 ui-monospace,monospace;letter-spacing:.1em}
+      #intro{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:radial-gradient(60% 50% at 50% 45%,#2a1912 0%,#140d0a 70%);transition:opacity .5s ease,visibility .5s}
+      #intro.done{opacity:0;visibility:hidden}
+      .intro-box{display:flex;flex-direction:column;align-items:center;gap:22px}
+      .intro-word{display:flex;gap:.32em;font:700 clamp(28px,6vw,44px)/1 'Roboto Mono',ui-monospace,SFMono-Regular,Menlo,monospace;color:#f5f1eb}
+      .intro-word span{opacity:0;transform:translateY(14px);animation:intro-rise .6s cubic-bezier(.2,.7,.2,1) forwards}
+      .intro-word span:nth-child(1){color:#d28a4c}
+      .intro-word span:nth-child(2){animation-delay:.08s}
+      .intro-word span:nth-child(3){animation-delay:.16s}
+      .intro-word span:nth-child(4){animation-delay:.24s}
+      .intro-word span:nth-child(5){animation-delay:.32s}
+      .intro-bar{position:relative;width:132px;height:2px;overflow:hidden;border-radius:2px;background:#3f2319}
+      .intro-bar::after{content:'';position:absolute;inset:0;width:40%;background:linear-gradient(90deg,#e0a46d,#d28a4c);animation:intro-slide 1.1s ease-in-out infinite}
+      .intro-tag{margin:0;font:400 11px/1 'Roboto Mono',ui-monospace,monospace;letter-spacing:.24em;text-transform:uppercase;color:#b39463;opacity:0;animation:intro-fade .6s .45s forwards}
+      @keyframes intro-rise{to{opacity:1;transform:none}}
+      @keyframes intro-fade{to{opacity:1}}
+      @keyframes intro-slide{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+      @media (prefers-reduced-motion:reduce){
+        .intro-word span,.intro-tag{animation:none;opacity:1;transform:none}
+        .intro-bar::after{animation:none;width:100%;opacity:.6}
+        #intro{transition:none}
+      }
     </style>
   </head>
   <body>
-    <div id="root"><div class="boot" aria-hidden="true">KURIO</div></div>
+    <div id="intro" role="status" aria-label="Carregando o Kurio">
+      <div class="intro-box">
+        <div class="intro-word" aria-hidden="true"><span>K</span><span>U</span><span>R</span><span>I</span><span>O</span></div>
+        <div class="intro-bar" aria-hidden="true"></div>
+        <p class="intro-tag">Marketplace de NFTs</p>
+      </div>
+    </div>
+    <div id="root"></div>
     <noscript>O Kurio precisa de JavaScript para funcionar.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
