@@ -95,7 +95,7 @@ export function WalletPicker({
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-sm bg-surface px-3 py-2" aria-live="polite">
         {connected ? (
           <>
-            <p className="flex items-center gap-2 text-sm text-success">
+            <p className="flex items-center gap-2 text-sm text-success" data-testid="wallet-status">
               <CheckCircle2 className="size-4" aria-hidden />
               Conectada em {NETWORK_LABEL[network]}
             </p>
@@ -106,7 +106,7 @@ export function WalletPicker({
           </>
         ) : (
           <>
-            <p className="text-sm text-sand">
+            <p className="text-sm text-sand" data-testid="wallet-status">
               Carteira não conectada
             </p>
             <Button type="button" variant="outline" size="sm" onClick={onConnect} disabled={!selectedId || connecting}>

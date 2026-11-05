@@ -25,6 +25,7 @@ export function CartLiveNotices({ nftIds }: { nftIds: string[] }) {
       {notices.map((n) => (
         <div
           key={n.id}
+          data-testid="live-notice"
           className="flex items-start justify-between gap-3 rounded-sm border border-brand bg-surface-dark/60 px-4 py-3 text-sm text-cream"
         >
           <p className="flex items-start gap-2">
@@ -102,7 +103,7 @@ function Thumb({ line, size }: { line: CartLine; size: number }) {
 function DesktopRow({ line, priceChanged }: { line: CartLine; priceChanged: boolean }) {
   const a = useLineActions(line)
   return (
-    <tr className="bg-surface">
+    <tr data-testid="cart-line" data-nft={line.nftId} className="bg-surface">
       <td className="py-0 pr-3">
         <div className="flex items-center gap-4">
           <Thumb line={line} size={70} />
@@ -128,7 +129,7 @@ function DesktopRow({ line, priceChanged }: { line: CartLine; priceChanged: bool
           label={`Quantidade de ${line.name}`}
         />
       </td>
-      <td className="px-2 text-[15px] font-bold text-brand tabular-nums">
+      <td className="px-2 text-[15px] font-bold text-brand tabular-nums" data-testid="line-total">
         {formatEth(line.lineTotal)}
       </td>
       <td className="pr-6 text-right">
@@ -149,7 +150,7 @@ function DesktopRow({ line, priceChanged }: { line: CartLine; priceChanged: bool
 function MobileCard({ line, priceChanged }: { line: CartLine; priceChanged: boolean }) {
   const a = useLineActions(line)
   return (
-    <li className="flex gap-3 overflow-hidden rounded-[18px] bg-surface">
+    <li data-testid="cart-line-mobile" className="flex gap-3 overflow-hidden rounded-[18px] bg-surface">
       <Thumb line={line} size={100} />
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 py-2 pr-3">
         <div className="flex items-start justify-between gap-2">

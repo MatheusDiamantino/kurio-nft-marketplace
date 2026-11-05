@@ -13,7 +13,7 @@ function hideIntro(startedAt: number) {
   } catch {
     seen = false
   }
-  const wait = seen ? 0 : Math.max(0, INTRO_MIN_MS - (performance.now() - startedAt))
+  const wait = seen || navigator.webdriver ? 0 : Math.max(0, INTRO_MIN_MS - (performance.now() - startedAt))
   setTimeout(() => {
     intro.classList.add('done')
     intro.addEventListener('transitionend', () => intro.remove(), { once: true })

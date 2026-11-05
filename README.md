@@ -6,6 +6,7 @@ Dá para navegar pelo catálogo, ver os detalhes de uma peça, montar o carrinho
 
 - Demo: _URL de deploy_
 - Decisões técnicas: [ARCHITECTURE.md](./ARCHITECTURE.md)
+- Lighthouse: [resultados](./lighthouse/summary.md) e [análise](./lighthouse/ANALYSIS.md)
 
 ## Rodando o projeto
 
@@ -29,6 +30,8 @@ pnpm build        # checa os tipos e gera o build em dist/
 pnpm preview      # serve o build em http://localhost:4173
 pnpm lint
 pnpm typecheck
+pnpm test:e2e     # testes com Playwright
+pnpm lighthouse   # auditoria (rode o build antes)
 ```
 
 Se quiser desligar os mocks e apontar para uma API real, crie um `.env.local` com `VITE_ENABLE_MOCKS=false`.
@@ -58,6 +61,17 @@ __kurio.realtime.restore()                              // reconecta e sincroniz
 ```
 
 A lista completa de cenários e o passo a passo de cada fluxo de falha estão no [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+## Testes
+
+```bash
+pnpm exec playwright install chromium   # só na primeira vez
+pnpm test:e2e
+```
+
+Os testes rodam em desktop (1440 px) e mobile (390 px). Eles cobrem os fluxos de compra, os cenários de erro, os eventos de tempo real, a comparação visual com imagens de referência e a acessibilidade com axe. Cada teste começa com os dados zerados.
+
+Se você mudar o visual de propósito, atualize as imagens com `pnpm test:e2e:update`.
 
 ## Deploy
 

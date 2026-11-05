@@ -8,6 +8,8 @@ export function RealtimeIndicator() {
     <div role="status" aria-live="polite" className="pointer-events-none fixed right-4 bottom-24 z-50 md:bottom-4">
       {problem && (
         <p
+          data-testid="realtime-status"
+          data-status={status}
           className="flex items-center gap-2 rounded-sm border border-line-soft bg-surface px-3 py-2 text-xs text-sand shadow-lg"
         >
           <WifiOff className="size-4 text-danger" aria-hidden />
@@ -15,7 +17,7 @@ export function RealtimeIndicator() {
         </p>
       )}
       {status === 'connected' && (
-        <span className="sr-only">
+        <span data-testid="realtime-status" data-status="connected" className="sr-only">
           <Wifi aria-hidden /> Atualizações em tempo real ativas
         </span>
       )}

@@ -137,6 +137,7 @@ function SortSelect({ value, onChange, className }: { value: CatalogSort; onChan
       <Select value={value} onValueChange={(v) => onChange(v as CatalogSort)}>
         <SelectTrigger
           aria-labelledby={labelId}
+          data-testid="sort-select"
           className="h-8 border-0 bg-transparent px-1 text-sm text-cream shadow-none hover:text-brand-accent dark:bg-transparent dark:hover:bg-transparent [&_svg:not([class*='text-'])]:text-cream"
         >
           <SelectValue />
@@ -327,10 +328,12 @@ export function Catalog() {
         </div>
 
         <div className="min-w-0 flex-1">
+          
           <div className="flex items-center justify-between gap-4">
             <CatalogTabs tab={tab} onChange={(t) => void update({ tab: t === 'all' ? undefined : t })} />
             <SortSelect value={search.sort ?? 'recent'} onChange={(s) => void update({ sort: s === 'recent' ? undefined : s })} className="hidden md:flex" />
           </div>
+          
           <div id="catalog-panel" role="tabpanel" aria-labelledby={`catalog-tab-${tab}`} aria-busy={isFetching} className="mt-6 md:mt-8">
             {isError && !data ? (
               <ErrorState
@@ -370,6 +373,7 @@ export function Catalog() {
                   </p>
                 )}
                 <ul
+                  data-testid="catalog-grid"
                   className={cn(
                     'grid grid-cols-2 gap-x-4 gap-y-10 transition-opacity duration-300 md:gap-x-8 lg:grid-cols-3 lg:gap-y-[72px] [&>li:nth-child(even)]:mt-8 md:[&>li:nth-child(even)]:mt-0',
                     dimmed && 'opacity-60',

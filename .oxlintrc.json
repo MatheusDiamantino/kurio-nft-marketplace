@@ -13,5 +13,16 @@
         "allowConstantExport": true
       }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": [
+        "tests/**"
+      ],
+      "rules": {
+        "react/rules-of-hooks": "off",
+        "react-hooks/rules-of-hooks": "off"
+      }
+    }
+  ]
 }

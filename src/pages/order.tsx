@@ -90,6 +90,7 @@ function Pending({ order, headingRef }: { order: Order; headingRef: HeadingRef }
   return (
     <section
       aria-labelledby="order-title"
+      data-testid="order-pending"
       className="flex w-full max-w-[578px] flex-col items-center gap-4 bg-surface px-6 py-10 text-center"
     >
       <Loader2 className="size-12 animate-spin text-brand motion-reduce:animate-none" aria-hidden />
@@ -103,7 +104,7 @@ function Pending({ order, headingRef }: { order: Order; headingRef: HeadingRef }
       <dl className="mt-2 grid w-full grid-cols-2 gap-3 border-t border-line pt-4 text-left text-sm">
         <div>
           <dt className="text-tan">Pedido</dt>
-          <dd className="truncate text-cream">
+          <dd className="truncate text-cream" data-testid="order-id">
             {order.id}
           </dd>
         </div>
@@ -120,6 +121,7 @@ function Declined({ order, headingRef }: { order: Order; headingRef: HeadingRef 
   return (
     <section
       aria-labelledby="order-title"
+      data-testid="order-declined"
       className="flex w-full max-w-[578px] flex-col items-center gap-4 bg-surface px-6 py-10 text-center"
     >
       <XCircle className="size-12 text-danger" aria-hidden />
@@ -128,7 +130,7 @@ function Declined({ order, headingRef }: { order: Order; headingRef: HeadingRef 
       </h1>
       <p className="max-w-md text-sm text-sand">{order.declineReason ?? 'A transação não foi concluída.'}</p>
       <p className="max-w-md text-sm text-sand">Nenhum valor foi cobrado e os itens continuam no seu carrinho.</p>
-      <p className="text-xs text-tan">
+      <p className="text-xs text-tan" data-testid="order-id">
         Pedido {order.id}
       </p>
       <div className="mt-2 flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
@@ -150,6 +152,7 @@ function Receipt({ order, headingRef }: { order: Order; headingRef: HeadingRef }
   return (
     <section
       aria-labelledby="order-title"
+      data-testid="order-confirmed"
       className="relative w-full max-w-[578px] overflow-hidden bg-surface pb-12"
     >
       <button
@@ -170,7 +173,7 @@ function Receipt({ order, headingRef }: { order: Order; headingRef: HeadingRef }
       <dl className="grid grid-cols-2 gap-y-3 border-y border-brand px-6 py-3 text-sm sm:grid-cols-[auto_auto_auto_auto] sm:justify-between sm:px-9 [&_dt]:whitespace-nowrap">
         <div className="sm:border-r sm:border-brand sm:pr-4">
           <dt className="font-bold text-sand">ID da transação</dt>
-          <dd className="text-sand">
+          <dd className="text-sand" data-testid="order-tx">
             <span title={tx}>{shortTx}</span>
           </dd>
         </div>
@@ -208,7 +211,7 @@ function Receipt({ order, headingRef }: { order: Order; headingRef: HeadingRef }
           </thead>
           <tbody>
             {order.lines.map((l) => (
-              <tr key={`${l.nftId}:${l.editionId}`}>
+              <tr key={`${l.nftId}:${l.editionId}`} data-testid="receipt-line">
                 <td className="pt-3">
                   <div className="flex items-center gap-3">
                     <img src={l.image} alt="" width={66} height={66} className="size-12 shrink-0 rounded-sm object-cover sm:size-[66px]" />
@@ -238,7 +241,7 @@ function Receipt({ order, headingRef }: { order: Order; headingRef: HeadingRef }
           </div>
           <div className="flex justify-between gap-4 sm:pl-[170px]">
             <dt className="font-bold text-cream">Total</dt>
-            <dd className="text-lg font-bold text-brand tabular-nums">
+            <dd className="text-lg font-bold text-brand tabular-nums" data-testid="receipt-total">
               {formatEth(order.total)}
             </dd>
           </div>

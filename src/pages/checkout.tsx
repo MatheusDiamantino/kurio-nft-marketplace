@@ -77,6 +77,7 @@ export function CheckoutPage() {
   const draft = useMemo<Draft | null>(() => {
     const own = readDraft(uid)
     if (own || uid === GUEST) return own
+    
     const fromGuest = readDraft(GUEST)
     if (fromGuest) {
       try {
@@ -525,7 +526,7 @@ function OrderFeedback({
     )
   }
   return (
-    <div role="status" aria-live="polite">
+    <div role="status" aria-live="polite" data-testid="order-feedback">
       {content}
     </div>
   )

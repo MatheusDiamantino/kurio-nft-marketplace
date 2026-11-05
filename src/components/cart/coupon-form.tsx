@@ -39,7 +39,7 @@ export function CouponForm({ coupon }: { coupon: AppliedCoupon | null }) {
       <div className="flex flex-col gap-2">
         <p className="text-sm font-bold text-cream">Código promocional</p>
         <div className="flex items-center justify-between gap-3 rounded-sm border border-brand bg-surface-dark/50 px-3 py-2">
-          <p className="flex items-center gap-2 text-sm text-cream">
+          <p className="flex items-center gap-2 text-sm text-cream" data-testid="applied-coupon">
             <Tag className="size-4 text-brand" aria-hidden />
             <span>
               <strong className="text-brand">{coupon.code}</strong> - {coupon.description}

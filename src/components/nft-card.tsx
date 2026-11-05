@@ -22,7 +22,7 @@ export function NftCard({ nft, priority = false, className }: { nft: NftSummary;
   const headingId = `nft-${nft.id}-title`
 
   return (
-    <article aria-labelledby={headingId} className={cn('group relative flex flex-col gap-3', className)}>
+    <article aria-labelledby={headingId} className={cn('group relative flex flex-col gap-3', className)} data-testid="nft-card">
       <div className="relative aspect-[258/300] overflow-hidden rounded-[20px] bg-surface p-[6%]">
         <img
           src={nft.image}

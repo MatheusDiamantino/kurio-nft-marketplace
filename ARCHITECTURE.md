@@ -15,6 +15,8 @@ src/
   components/  layout, componentes shadcn adaptados e compartilhados
   pages/       telas
   mocks/       servidor simulado (dados, handlers REST, Socket.IO, cenários e painel)
+tests/         Playwright
+scripts/       auditoria Lighthouse
 ```
 
 O caminho de uma requisição é: componente, hook do TanStack Query, `api/endpoints.ts`, Axios, MSW, `mocks/handlers.ts` e `mocks/db.ts`. Os eventos fazem o caminho inverso: uma mudança no `db` vira um evento no servidor Socket.IO simulado, que chega ao `socket.io-client` e é aplicado no cache do TanStack Query.
@@ -104,7 +106,7 @@ Cuidados na hora de aplicar um evento:
 - Evento de pedido de outro usuário é descartado.
 - A cada login, logout ou expiração, o socket antigo é fechado e um novo é aberto para a nova sessão.
 
-O binding do MSW tem limitações. Não existem rooms nem namespaces, então a separação por usuário é feita na conexão. Ele também não manda heartbeat, e o servidor simulado faz isso a cada 20 s. As quedas de conexão são simuladas com `__kurio.realtime.drop()` e `restore()`.
+O binding do MSW tem limitações. Não existem rooms nem namespaces, então a separação por usuário é feita na conexão. Ele também não manda heartbeat, e o servidor simulado faz isso a cada 20 s. Como o socket roda dentro da página, o modo offline do Playwright não o afeta. Por isso as quedas são simuladas com `__kurio.realtime.drop()` e `restore()`.
 
 ## Sessão
 
@@ -205,7 +207,7 @@ Latências: `none` (0 ms), `fast` (150 a 300 ms, padrão), `slow` (2,5 s) e `var
 - Nenhum estado depende só de cor: há ícones e textos como "ESGOTADO" e "Preço atualizado".
 - Animações respeitam a preferência por menos movimento.
 
-Os pontos do carrossel do topo da home ficaram menores que 24 px para seguir o Figma.
+O axe roda nos testes em 10 telas, nos dois tamanhos. A única exceção conhecida são os pontos do carrossel do topo da home, que ficaram menores que 24 px para seguir o Figma.
 
 ## Diferenças em relação ao Figma
 
@@ -218,10 +220,11 @@ Os pontos do carrossel do topo da home ficaram menores que 24 px para seguir o F
 - "Mercado" leva ao catálogo da home, porque não existe uma tela separada para ele.
 - O Figma não mostra os destaques e o blog no mobile, então eles viraram carrosséis com arrasto. Nos destaques, a imagem fica em cima e o texto embaixo.
 - O checkout ganhou uma etapa de revisão antes de enviar, pedida no enunciado.
+- Ao abrir o site aparece uma tela de entrada com a marca, que não existe no Figma. Ela fica no `index.html`, aparece antes do JavaScript carregar e cobre o tempo de registrar o service worker do MSW. Fica no mínimo 1,1 s só na primeira visita da aba e some assim que a app está pronta nas seguintes.
 
 ## Limitações
 
 - O WebSocket é simulado dentro da página, sem servidor real.
-- O service worker do MSW é registrado na primeira visita, o que deixa o primeiro carregamento um pouco mais lento.
+- O service worker do MSW é registrado na primeira visita, o que deixa o primeiro carregamento um pouco mais lento. Mais detalhes em [lighthouse/ANALYSIS.md](./lighthouse/ANALYSIS.md).
 - A biblioteca `tldts`, que o MSW puxa indiretamente, foi trocada por uma versão vazia em `src/mocks/stubs/tldts.ts`. A app não usa cookies, e isso tirou cerca de 270 kB do bundle.
 - Os dados simulados ficam no navegador: duas abas compartilham o estado, dois navegadores não.

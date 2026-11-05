@@ -37,6 +37,7 @@ export function EditionPicker({
               value={e.id}
               disabled={soldOut}
               aria-label={soldOut ? `${e.label} (esgotada)` : e.label}
+              data-testid={`edition-${e.id}`}
               className={cn(
                 'rounded-full border px-2 py-0.5 text-cream transition-colors hover:border-brand focus-visible:ring-2 focus-visible:ring-brand-accent',
                 size === 'lg' ? 'min-w-[52px] text-sm leading-6' : 'text-xs leading-5',

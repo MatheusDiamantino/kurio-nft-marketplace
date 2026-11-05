@@ -43,19 +43,19 @@ export function QuoteSummary({
       <dl className="flex flex-col gap-3 text-[15px] text-cream">
         <div className="flex items-center justify-between gap-4">
           <dt>Subtotal</dt>
-          <dd className="text-lg tabular-nums">
+          <dd data-testid="summary-subtotal" className="text-lg tabular-nums">
             {formatEth(quote.subtotal)}
           </dd>
         </div>
         <div className="flex items-center justify-between gap-4">
           <dt>Desconto do lançamento{quote.coupon ? ` (${quote.coupon.code})` : ''}</dt>
-          <dd className={cn('tabular-nums', hasDiscount && 'text-success')}>
+          <dd data-testid="summary-discount" className={cn('tabular-nums', hasDiscount && 'text-success')}>
             (-) {hasDiscount ? formatEth(quote.discount) : '00.00'}
           </dd>
         </div>
         <div className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1">
           <dt>Taxa de rede</dt>
-          <dd className="text-lg tabular-nums">
+          <dd data-testid="summary-fee" className="text-lg tabular-nums">
             {formatEth(quote.networkFee)}
           </dd>
           <dd className={cn('col-span-2 text-xs text-brand', feeAlign === 'right' ? 'text-right' : 'text-center')}>Taxa estimada</dd>
@@ -63,7 +63,7 @@ export function QuoteSummary({
       </dl>
       <div className="mt-6 flex items-center justify-between gap-4 border-t border-line pt-4">
         <span className="text-base font-bold text-cream">Total</span>
-        <span className="text-lg font-bold text-brand tabular-nums">
+        <span data-testid="summary-total" className="text-lg font-bold text-brand tabular-nums">
           {formatEth(quote.total)}
         </span>
       </div>

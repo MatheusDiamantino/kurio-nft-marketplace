@@ -39,7 +39,7 @@ export function FavoritesPage() {
           }
         />
       ) : (
-        <ul className="grid grid-cols-2 gap-4 lg:grid-cols-3 lg:gap-7">
+        <ul className="grid grid-cols-2 gap-4 lg:grid-cols-3 lg:gap-7" data-testid="favorites-grid">
           {items.map((nft) => (
             <li key={nft.id}>
               <NftCard nft={nft} />

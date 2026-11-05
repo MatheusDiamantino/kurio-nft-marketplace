@@ -34,6 +34,7 @@ export function CartButton({ className }: { className?: string }) {
       <ShoppingCart className="size-6" aria-hidden />
       {count > 0 && (
         <span
+          data-testid="cart-count"
           className="absolute top-0.5 right-0 grid min-w-4 place-items-center rounded-full bg-brand px-1 text-[10px] leading-4 font-medium text-ink"
         >
           {count > 99 ? '99+' : count}
