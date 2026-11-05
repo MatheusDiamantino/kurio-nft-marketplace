@@ -4,7 +4,7 @@ Marketplace de NFTs feito para o [desafio de frontend da Jungle Gaming](https://
 
 Dá para navegar pelo catálogo, ver os detalhes de uma peça, montar o carrinho, pagar e acompanhar o pedido, além de editar o perfil e as carteiras. Não existe backend: as APIs, o login, o pagamento e o tempo real são simulados no navegador com MSW, então a aplicação funciona sozinha, inclusive no deploy.
 
-- Demo: _URL de deploy_
+- Demo: https://kurio-nft-marketplace-dun.vercel.app
 - Decisões técnicas: [ARCHITECTURE.md](./ARCHITECTURE.md)
 - Lighthouse: [resultados](./lighthouse/summary.md) e [análise](./lighthouse/ANALYSIS.md)
 

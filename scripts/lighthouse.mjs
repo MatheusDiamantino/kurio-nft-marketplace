@@ -99,7 +99,7 @@ async function main() {
     lighthouse: results[0]?.lighthouseVersion,
     browser: results[0]?.userAgent,
     baseUrl: BASE,
-    build: 'vite build (production) served by vite preview — MSW mock layer enabled, default scenario',
+    build: 'vite build (production) served by vite preview, MSW mock layer enabled, default scenario',
     throttling: 'Lighthouse defaults: mobile = simulated slow 4G + 4x CPU slowdown (Moto G Power); desktop = desktop preset',
     runsPerPageAndProfile: config.runs,
   }
@@ -107,7 +107,7 @@ async function main() {
   const targets = config.targets
   const pct = (n) => String(n).padStart(3)
   const lines = [
-    '# Lighthouse — resultados (mediana de 3 execuções)',
+    '# Lighthouse: resultados (mediana de 3 execuções)',
     '',
     `Gerado em ${env.date} por \`pnpm lighthouse\`.`,
     '',
