@@ -1,193 +1,229 @@
-# Arquitetura — Kurio NFT Marketplace
+# Arquitetura
 
-Este documento descreve as decisões técnicas, os contratos REST e de eventos, a política de sessão, o estado do carrinho, a estratégia de cache, a reconciliação REST × Socket.IO, as limitações e os desvios em relação ao Figma.
+Aqui estão as decisões técnicas do Kurio: como o código está organizado, os contratos da API, os eventos de tempo real, a sessão, o carrinho, o cache e o que ficou diferente do Figma. Para rodar o projeto, veja o [README](./README.md).
 
-## 1. Visão geral
+## Organização
 
 ```
 src/
-  api/          contracts.ts (tipos compartilhados) · client.ts (Axios + ApiError) · endpoints.ts
-  auth/         session-store (token fora do React) · hooks de sessão e login/logout
-  queries/      TanStack Query: chaves, políticas, hooks (catálogo, carrinho, cotação, conta, favoritos)
-  realtime/     RealtimeClient (socket.io-client) · EventApplier (cache) · notices (avisos ao vivo)
-  routes/       schemas de search params · rotas privadas
-  router.tsx    TanStack Router (rotas em código, guards, lazy routes)
-  components/   layout, shadcn/ui adaptado, componentes compartilhados
-  pages/        telas
-  mocks/        servidor simulado: db (estado), handlers REST, realtime (Socket.IO), cenários, painel
-tests/          Playwright (E2E + regressão visual)
-scripts/        auditoria Lighthouse
-lighthouse/     configuração versionada + relatórios
+  api/         tipos compartilhados, cliente Axios e endpoints
+  auth/        sessão e login/logout
+  queries/     hooks do TanStack Query
+  realtime/    cliente Socket.IO e aplicação dos eventos no cache
+  routes/      search params e rotas privadas
+  router.tsx   rotas do TanStack Router
+  components/  layout, componentes shadcn adaptados e compartilhados
+  pages/       telas
+  mocks/       servidor simulado (dados, handlers REST, Socket.IO, cenários e painel)
+tests/         Playwright
+scripts/       auditoria Lighthouse
 ```
 
-**Fluxo de dados:** UI → hooks do TanStack Query → `api/endpoints.ts` → Axios → (MSW na camada de rede) → `mocks/handlers.ts` → `mocks/db.ts`.
-Eventos: `mocks/db.ts` (mutação) → `mocks/realtime.ts` (servidor Socket.IO via MSW `ws` + `@mswjs/socket.io-binding`) → `socket.io-client` → `RealtimeClient` → `EventApplier` → cache do TanStack Query → UI.
+O caminho de uma requisição é: componente, hook do TanStack Query, `api/endpoints.ts`, Axios, MSW, `mocks/handlers.ts` e `mocks/db.ts`. Os eventos fazem o caminho inverso: uma mudança no `db` vira um evento no servidor Socket.IO simulado, que chega ao `socket.io-client` e é aplicado no cache do TanStack Query.
 
-Nenhum componente, hook ou cliente Axios contém respostas fictícias: o mock vive inteiramente na camada de rede e é ativado por configuração (`VITE_ENABLE_MOCKS`, ativo por padrão em dev, testes e no build de demonstração).
+Nenhum componente conhece os dados fictícios. O mock fica todo na camada de rede e é ligado pela variável `VITE_ENABLE_MOCKS`. Trocar por uma API real é só desligar essa variável.
 
-**Ordem de boot:** `main.tsx` inicia o MSW **antes** de importar a aplicação (`app.tsx`). Isso é necessário porque o `engine.io-client` captura `globalThis.WebSocket` no momento do import; se a app fosse importada antes, o socket escaparia da interceptação.
+Um detalhe importante: o `main.tsx` inicia o MSW antes de importar a aplicação. O `engine.io-client` guarda a referência do `WebSocket` no momento do import, então, se a app carregasse primeiro, o socket escaparia do mock.
 
-## 2. Contratos REST
+## API REST
 
-Todos os tipos estão em `src/api/contracts.ts` e são usados ao mesmo tempo pelo cliente e pelos handlers do MSW. Se um contrato mudar, os dois lados deixam de compilar. Valores em ETH trafegam como **strings decimais** e os cálculos usam `decimal.js` (`src/lib/eth.ts`). Quantidades são inteiras.
+Os tipos ficam em `src/api/contracts.ts` e são usados tanto pelo cliente quanto pelos handlers do MSW. Se um contrato mudar, os dois lados param de compilar.
 
-Base: `/api`. Autenticação: `Authorization: Bearer <token>`. Carrinho de visitante: `X-Cart-Id`. Pedidos: `Idempotency-Key`.
+Valores em ETH trafegam como string decimal e as contas usam `decimal.js`, para evitar erro de ponto flutuante.
 
-| Recurso | Método e rota | Corpo / parâmetros | Resposta |
-| --- | --- | --- | --- |
-| Cadastro | `POST /auth/register` | `RegisterRequest` (`guestCartId?`) | `201 Session` · `422 VALIDATION_ERROR` · `409 EMAIL_TAKEN/USERNAME_TAKEN` |
-| Login | `POST /auth/login` | `LoginRequest` (`guestCartId?`) | `200 Session` · `401 INVALID_CREDENTIALS` · `422` |
-| Sessão | `GET /auth/session` | — | `200 Session` · `401 SESSION_EXPIRED/UNAUTHENTICATED` |
-| Logout | `POST /auth/logout` | — | `204` (revoga o token) |
-| Catálogo | `GET /nfts` | `q, collection*, network*, minPrice, maxPrice, sort, tab, page, pageSize` | `CatalogResponse` (itens, paginação, facetas, `applied`) |
-| Detalhe | `GET /nfts/:id` | — | `NftDetail` · `404 NOT_FOUND` |
-| Favoritos | `GET /favorites` · `PUT/DELETE /favorites/:nftId` | — | `FavoritesResponse` / `{ nftIds }` |
-| Carrinho | `GET /cart` · `POST /cart/items` · `PATCH/DELETE /cart/items/:nftId/:editionId` | `AddCartItemRequest` / `{ quantity }` | `Cart` · `409 OUT_OF_STOCK` · `404` · `422` |
-| Cupom | `POST /cart/coupon` · `DELETE /cart/coupon` | `{ code }` | `Cart` · `422 COUPON_INVALID/COUPON_EXPIRED` |
-| Cotação | `POST /quote` | `{ network }` | `Quote` (linhas, subtotal, desconto, taxa, total, `issues`, `fingerprint`, `expiresAt`) |
-| Pedidos | `POST /orders` (header `Idempotency-Key`) | `CreateOrderRequest` | `201 Order` (novo) · `200 Order` (replay) · `409 QUOTE_STALE/OUT_OF_STOCK/IDEMPOTENCY_CONFLICT/WALLET_DISCONNECTED` · `504 GATEWAY_TIMEOUT` |
-| | `GET /orders?status=` · `GET /orders/:id` | — | `{ items: Order[] }` · `Order` · `403 FORBIDDEN` · `404` |
-| Perfil | `GET/PATCH /me/profile` · `PUT/DELETE /me/avatar` · `POST /me/password` | `UpdateProfileRequest` · `{ dataUrl }` · `ChangePasswordRequest` | `User` · `204` · `422` · `409` |
-| Carteiras | `GET /me/wallets` · `PUT /me/wallets/:slot` (`primary`/`secondary`) | `UpsertWalletRequest` | `{ items }` · `Wallet` · `422` |
-| Conexão de carteira | `POST /me/wallets/:id/connect` · `DELETE /me/wallet-connections/:id` | `{ network }` | `WalletConnection` · `409 WALLET_REJECTED` |
+A base é `/api`. O usuário logado manda `Authorization: Bearer <token>`, o visitante manda o carrinho em `X-Cart-Id` e a criação de pedido manda `Idempotency-Key`.
 
-**Formato de erro** (todas as falhas): `{ "error": { "code": ApiErrorCode, "message": string, "fields"?: Record<string,string>, "details"?: unknown } }`.
-O Axios normaliza tudo em `ApiError` (`status`, `code`, `fields`, `details`, `isTransient`, `isAuthError`), incluindo os erros sem resposta (`NETWORK_ERROR`, `TIMEOUT`).
-
-| Situação | HTTP | `code` |
+| Recurso | Rota | Respostas principais |
 | --- | --- | --- |
-| Validação | 422 | `VALIDATION_ERROR`, `COUPON_INVALID`, `COUPON_EXPIRED` (com `fields`) |
-| Sessão inválida | 401 | `UNAUTHENTICATED`, `SESSION_EXPIRED`, `INVALID_CREDENTIALS` |
-| Falta de permissão | 403 | `FORBIDDEN` (pedido de outro usuário) |
-| Recurso inexistente | 404 | `NOT_FOUND` (inclui rotas `/api/*` desconhecidas) |
-| Conflito de disponibilidade | 409 | `OUT_OF_STOCK`, `QUOTE_STALE` (com `details.quote` = cotação nova) |
-| Conflito de cadastro e idempotência | 409 | `EMAIL_TAKEN`, `USERNAME_TAKEN`, `IDEMPOTENCY_CONFLICT` |
-| Falha transitória | 503 / 504 / rede | `SERVICE_UNAVAILABLE`, `GATEWAY_TIMEOUT`, `NETWORK_ERROR`, `TIMEOUT` |
+| Cadastro | `POST /auth/register` | `201` · `422` · `409 EMAIL_TAKEN/USERNAME_TAKEN` |
+| Login | `POST /auth/login` | `200` · `401 INVALID_CREDENTIALS` · `422` |
+| Sessão | `GET /auth/session` · `POST /auth/logout` | `200` · `401 SESSION_EXPIRED` · `204` |
+| Catálogo | `GET /nfts?q&collection&network&minPrice&maxPrice&sort&tab&page&pageSize` | itens, paginação e contadores dos filtros |
+| Detalhe | `GET /nfts/:id` | `200` · `404` |
+| Favoritos | `GET /favorites` · `PUT/DELETE /favorites/:nftId` | lista de ids |
+| Carrinho | `GET /cart` · `POST /cart/items` · `PATCH/DELETE /cart/items/:nftId/:editionId` | carrinho · `409 OUT_OF_STOCK` |
+| Cupom | `POST/DELETE /cart/coupon` | carrinho · `422 COUPON_INVALID/COUPON_EXPIRED` |
+| Cotação | `POST /quote` | linhas, subtotal, desconto, taxa, total e um `fingerprint` |
+| Pedidos | `POST /orders` | `201` novo · `200` repetido · `409 QUOTE_STALE/OUT_OF_STOCK/IDEMPOTENCY_CONFLICT` · `504` |
+| | `GET /orders` · `GET /orders/:id` | `200` · `403` · `404` |
+| Perfil | `GET/PATCH /me/profile` · `PUT/DELETE /me/avatar` · `POST /me/password` | `200` · `422` |
+| Carteiras | `GET /me/wallets` · `PUT /me/wallets/:slot` · `POST /me/wallets/:id/connect` | `200` · `422` · `409 WALLET_REJECTED` |
 
-### Idempotência de pedidos
+Todo erro tem o mesmo formato:
 
-- O cliente gera uma `Idempotency-Key` (UUID) por **tentativa de compra** e a guarda em `sessionStorage` junto com o hash do corpo. Retentativas por timeout ou erro de rede reaproveitam a mesma chave.
-- O servidor associa a chave a `(usuário, fingerprint do corpo, pedido)`:
-  - mesma chave e mesmo conteúdo → devolve o **mesmo pedido** (`200`, header `Idempotent-Replayed: true`);
-  - mesma chave com conteúdo diferente, ou de outro usuário → `409 IDEMPOTENCY_CONFLICT`.
-- O cenário `order-timeout` cria o pedido e devolve `504` na primeira resposta. O cliente repete com a mesma chave e recupera o pedido original sem duplicar a compra.
-- Cliques repetidos: o botão fica desabilitado durante a mutation e uma `ref` impede reentrada.
+```json
+{ "error": { "code": "OUT_OF_STOCK", "message": "...", "fields": {}, "details": {} } }
+```
 
-### Revalidação antes da compra
+O Axios converte qualquer falha num `ApiError`, inclusive as que não têm resposta, como queda de rede e timeout. Assim a interface sabe se o erro é de validação, de sessão ou passageiro, e decide se mostra a mensagem no campo, manda para o login ou tenta de novo.
 
-Ao criar o pedido, o servidor recalcula a cotação (preço, disponibilidade, cupom e taxa) e compara o `fingerprint` com o que o usuário revisou:
-- se a disponibilidade mudou → `409 OUT_OF_STOCK`;
-- se preço, cupom ou taxa mudaram, ou a cotação expirou (10 min) → `409 QUOTE_STALE`.
+### Pedidos sem duplicar
 
-As duas respostas trazem a cotação nova em `details.quote`. A UI mostra a diferença e exige **nova confirmação** do usuário. A cotação revisada também é comparada continuamente com a cotação viva, que é invalidada por eventos `nft.updated`, então a confirmação fica bloqueada antes mesmo de ir ao servidor.
+Cada tentativa de compra gera uma `Idempotency-Key`, que fica salva no `sessionStorage` junto com um hash do pedido. Se a requisição falhar por timeout ou rede, o reenvio usa a mesma chave.
+
+O servidor lembra a chave:
+
+- mesma chave e mesmo conteúdo devolvem o pedido que já existe;
+- mesma chave com conteúdo diferente devolve `409 IDEMPOTENCY_CONFLICT`.
+
+O cenário `order-timeout` mostra isso: o pedido é criado, a primeira resposta é `504` e o reenvio recupera o mesmo pedido. Além disso, o botão de confirmar fica desabilitado enquanto a requisição está em andamento.
+
+### Preço que muda na hora de pagar
+
+Antes de criar o pedido, o servidor recalcula a cotação e compara com a que o usuário revisou. Se a edição esgotou, responde `OUT_OF_STOCK`. Se o preço, o cupom ou a taxa mudaram, ou se a cotação passou de 10 minutos, responde `QUOTE_STALE`.
+
+As duas respostas já trazem a cotação nova. A tela mostra o que mudou e pede uma nova confirmação. Na maioria dos casos isso nem chega ao servidor: o evento `nft.updated` atualiza a cotação na tela e o botão de confirmar já fica bloqueado.
 
 ### Ciclo do pedido
 
-`pending` → `confirmed` | `declined`, e os dois estados finais são terminais.
-- Na criação, o estoque é **reservado**.
-- `confirmed`: remove do carrinho **apenas** os itens e quantidades comprados (itens adicionados depois permanecem).
-- `declined`: libera o estoque e mantém o carrinho intacto.
-- O recibo é um **snapshot** (`order.lines`, totais, carteira, rede). Mudanças posteriores no catálogo não alteram seus valores.
-- `txHash` e o link do explorador são simulados.
+O pedido nasce `pending` e termina `confirmed` ou `declined`, sem voltar atrás.
 
-## 3. Eventos Socket.IO
+- Ao criar o pedido, o estoque fica reservado.
+- Se confirmado, saem do carrinho só os itens comprados. O que foi adicionado depois continua lá.
+- Se recusado, o estoque é liberado e o carrinho não muda.
+- O recibo guarda uma cópia dos valores, então mudar o preço depois não altera o recibo.
 
-Transporte: `socket.io-client` 4 → `wss://realtime.kurio.mock` (`transports: ['websocket']`), interceptado pelo MSW (`ws.link`) com `@mswjs/socket.io-binding`. O handshake leva `auth: { token }`, e o servidor simulado lê o pacote `CONNECT` (`40{…}`) para associar a conexão ao usuário.
+## Tempo real
 
-Envelope comum (`RealtimeEnvelope`):
+O `socket.io-client` conecta em `wss://realtime.kurio.mock` e o MSW intercepta a conexão com `@mswjs/socket.io-binding`. O token vai no handshake, e é assim que o servidor sabe quem é o usuário.
+
+Todo evento tem o mesmo envelope:
 
 ```ts
-{ id: "evt_000123", type: "nft.updated" | "order.updated", resource: { type, id }, version: number, occurredAt: ISO, data }
+{ id: 'evt_000123', type: 'nft.updated' | 'order.updated', resource: { type, id }, version: number, occurredAt: string, data }
 ```
 
-| Evento | Destinatários | `data` | Efeito no cliente |
-| --- | --- | --- | --- |
-| `nft.updated` | todos | `price, compareAtPrice, editions[{id, available}], totalAvailable` | atualiza o detalhe, as páginas do catálogo e os favoritos no cache; se o NFT está no carrinho, mostra um aviso (toast + banner aria-live) e refaz a busca de carrinho e cotação na API |
-| `order.updated` | só o dono do pedido, com sessão válida | `userId, status, txHash, explorerUrl, declineReason` | atualiza o pedido; nos estados terminais refaz a busca de carrinho, cotação e catálogo e anuncia confirmação ou recusa |
+| Evento | Quem recebe | O que acontece na tela |
+| --- | --- | --- |
+| `nft.updated` | todos | preço e disponibilidade mudam no catálogo, no detalhe e nos favoritos; se o NFT estiver no carrinho, aparece um aviso e o carrinho é recarregado |
+| `order.updated` | só o dono do pedido | o status do pedido muda; ao confirmar ou recusar, carrinho e catálogo são recarregados |
 
-**Garantias do cliente** (`EventApplier`):
-- **Duplicatas:** o `id` do evento é aplicado no máximo uma vez (LRU de 500 ids).
-- **Eventos antigos:** um evento com `version ≤` à maior versão conhecida do recurso (no mapa interno ou no cache) é descartado, então o estado nunca regride.
-- **Estados terminais:** um pedido `confirmed` ou `declined` nunca é alterado por evento.
-- **Isolamento:** `order.updated` com `userId` diferente do usuário atual é ignorado. Além disso, cada sessão tem o próprio socket (veja a seção 4), e o servidor só entrega eventos privados a conexões cuja sessão ainda é válida.
-- **Ciclo de vida:** a cada login, logout, troca de usuário ou expiração, o socket anterior é encerrado, com `removeAllListeners` e `disconnect`. Os handlers verificam a época da sessão antes de aplicar qualquer evento.
+Cuidados na hora de aplicar um evento:
 
-**Limitações do transporte simulado:** o binding não implementa namespaces, rooms nem broadcast nativos. O roteamento por usuário é feito na conexão. O binding também não envia heartbeat, então o servidor simulado envia o ping do Engine.IO a cada 20 s. Como o socket roda dentro da página, um `context.setOffline()` do Playwright não o afeta: quedas de conexão são simuladas com `__kurio.realtime.drop()` / `restore()`. O transporte `polling` não é suportado.
+- O mesmo evento nunca é aplicado duas vezes. Os últimos 500 ids ficam guardados.
+- Evento com versão igual ou menor do que a conhecida é ignorado, então a tela nunca volta para um estado antigo.
+- Pedido confirmado ou recusado não muda mais.
+- Evento de pedido de outro usuário é descartado.
+- A cada login, logout ou expiração, o socket antigo é fechado e um novo é aberto para a nova sessão.
 
-## 4. Sessão
+O binding do MSW tem limitações. Não existem rooms nem namespaces, então a separação por usuário é feita na conexão. Ele também não manda heartbeat, e o servidor simulado faz isso a cada 20 s. Como o socket roda dentro da página, o modo offline do Playwright não o afeta. Por isso as quedas são simuladas com `__kurio.realtime.drop()` e `restore()`.
 
-- O token opaco, a expiração e o perfil público ficam em `localStorage` (`kurio.session`). **Senhas nunca são armazenadas no cliente.** No mock, elas são guardadas como SHA-256 com salt.
-- **Recuperação após refresh:** a sessão é lida do storage e validada em `GET /auth/session`; se o token não vale mais, a resposta 401 a encerra.
-- **Expiração:** qualquer 401 (`SESSION_EXPIRED` ou `UNAUTHENTICATED`) numa requisição feita **com** token encerra a sessão (`sessionStore.expire`). O `SessionEffects` então:
-  1. remove do cache todos os dados privados (`['private', ...]`), as cotações e o carrinho do usuário anterior;
-  2. limpa os avisos ao vivo (os sockets são trocados pelo `RealtimeClient`);
-  3. se a rota é privada, redireciona para `/login?redirect=<rota atual>`; depois do login o usuário volta exatamente para onde estava, e o rascunho do checkout é preservado em `sessionStorage`.
-- **Troca de usuário e logout:** as chaves de cache privadas são separadas por `userId` (`['private', userId, ...]`, `['cart', userId|'guest']`), então dados de usuários diferentes não colidem nem mesmo durante a transição. Toda troca de identidade também apaga esses dados.
-- **Proteção de rotas:** o `beforeLoad` do TanStack Router redireciona `/checkout`, `/orders/*` e `/account/*` para o login.
-- As abas ficam sincronizadas: logout em uma aba encerra a sessão nas outras (evento `storage`).
+## Sessão
 
-## 5. Estado do carrinho
+O token, a data de expiração e o perfil público ficam no `localStorage`. A senha nunca é guardada no cliente. No mock, ela é salva como hash com salt.
 
-- O carrinho é **estado do servidor**. Para visitantes, ele é identificado por `X-Cart-Id`, gerado pelo servidor e guardado em `localStorage`, então sobrevive ao refresh.
-- No login ou cadastro, o cliente envia `guestCartId` e o servidor **mescla** os itens do visitante no carrinho do usuário: soma as quantidades, limita à disponibilidade e mantém o cupom se o usuário não tiver um.
-- As regras de disponibilidade por NFT e edição (`min(available, maxPerOrder)`) são aplicadas no servidor (`409 OUT_OF_STOCK`) e refletidas na UI pelos limites do stepper.
-- Subtotal, desconto, taxa e total **sempre** vêm de `POST /quote`. A UI nunca calcula totais.
-- A alteração de quantidade é **otimista com rollback** (`useUpdateCartItem`).
+Ao recarregar a página, a sessão salva é validada em `GET /auth/session`. Qualquer `401` numa requisição autenticada encerra a sessão. Quando isso acontece:
 
-## 6. Cache, retries e sincronização (TanStack Query)
+1. os dados privados do usuário saem do cache;
+2. o socket é trocado;
+3. se a pessoa estava numa rota privada, ela vai para o login e, depois de entrar, volta para onde estava. O rascunho do checkout é mantido.
 
-| Item | Política |
+As chaves de cache privadas incluem o id do usuário (`['private', userId, ...]`). Assim, trocar de conta nunca mistura os dados de uma pessoa com os de outra, nem por um instante.
+
+`/account/*` e `/orders/*` exigem login. O `/checkout` fica aberto para visitantes, como no frame de Pagamento do Figma. O visitante preenche os dados e escolhe o tipo de carteira, e ao clicar em "Confirmar compra" vai para o login. Depois de entrar, o rascunho dele é aproveitado. Criar o pedido continua exigindo sessão.
+
+Logout em uma aba também desloga as outras.
+
+## Carrinho
+
+O carrinho mora no servidor. O visitante recebe um id de carrinho que fica no `localStorage`, então os itens sobrevivem ao refresh.
+
+No login ou cadastro, os itens do visitante são juntados ao carrinho da conta: as quantidades somam, respeitando o estoque, e o cupom é mantido se a conta não tiver outro.
+
+O limite de cada edição é validado no servidor e aparece no seletor de quantidade. Os totais vêm sempre da cotação (`POST /quote`), e a interface nunca faz essa conta sozinha. Mudar a quantidade atualiza a tela na hora e desfaz se a API recusar.
+
+## Cache e navegação
+
+| Item | Como está |
 | --- | --- |
-| `staleTime` | 30 s por padrão; carrinho 10 s; cotação 15 s. O catálogo e o detalhe também são atualizados por Socket.IO. |
-| `gcTime` | 5 min |
-| Retries de query | só falhas transitórias (rede, timeout, 5xx), no máximo 2, com backoff exponencial (400 ms → 3 s). Respostas 4xx e 401 nunca são repetidas. |
-| Retries de mutation | desligados; a criação de pedido tem retry próprio, idempotente. |
-| Respostas obsoletas | cada combinação de parâmetros tem a própria chave e o `AbortSignal` é repassado ao Axios. Uma resposta atrasada só cai na própria entrada do cache e nunca sobrescreve os resultados atuais (cenário `out-of-order`). |
-| Atualização em segundo plano | `placeholderData: keepPreviousData` no catálogo e na cotação, com um indicador "Atualizando…" (aria-live). |
-| Invalidação | mutations de carrinho gravam o carrinho devolvido pela API e invalidam a cotação; eventos invalidam o carrinho, a cotação e o pedido; favoritos e quantidade usam atualização otimista com `onSettled` → invalidate. |
-| Atualização otimista | favoritos (toggle) e quantidade do carrinho, ambos com rollback do snapshot e toast de erro. |
+| Dados considerados frescos | 30 s, ou 10 s para o carrinho e 15 s para a cotação |
+| Descarte da memória | 5 min sem uso |
+| Novas tentativas | só em erro passageiro (rede, timeout, 5xx), no máximo 2, com espera crescente |
+| Mutations | sem retry automático; a criação de pedido tem o próprio retry, com a mesma chave |
+| Respostas fora de ordem | cada filtro tem sua chave de cache e a requisição antiga é cancelada, então ela nunca sobrescreve a nova |
+| Troca de filtro | os resultados anteriores ficam na tela, levemente apagados, até chegarem os novos |
+| Favoritos e quantidade | atualizam na hora e voltam ao estado anterior se der erro |
 
-## 7. Reconciliação REST × Socket.IO
+Na navegação com o TanStack Router:
 
-- O REST é a fonte de verdade; os eventos são **dicas** aplicadas ao cache, de forma idempotente e monotônica.
-- Na **reconexão** (segundo `connect` em diante), o `RealtimeClient.reconcile()` invalida as queries **ativas** do catálogo, do carrinho, da cotação e dos pedidos do usuário, refazendo a busca no que está na tela. As inativas ficam marcadas como desatualizadas.
-- Pedido pendente: a tela do pedido busca o estado via REST ao montar (o que cobre o refresh) e mantém uma busca periódica lenta (15 s) só como rede de segurança enquanto o pedido estiver `pending`. Ao reconectar, a reconciliação traz o estado final. O id do pedido pendente fica em `localStorage`, e o checkout bloqueia uma nova compra enquanto ele não chegar a um estado terminal.
-- Quedas são anunciadas por um indicador acessível ("Atualizações em tempo real indisponíveis — reconectando…").
+- Cada rota tem um loader que busca os dados com os mesmos `queryOptions` dos hooks. Passar o mouse ou tocar num link já começa a buscar a página.
+- O código das rotas é carregado sob demanda e pré-carregado na primeira interação do usuário.
+- A barra de progresso só aparece em navegações acima de 250 ms e o spinner acima de 600 ms.
+- Entre páginas há um fade curto, que não roda ao trocar filtros e é desligado para quem prefere menos movimento.
 
-## 8. Mocks (MSW)
+Medindo no build de produção, ir da home para o detalhe de um NFT caiu de 735 ms para cerca de 330 ms no clique direto, e para cerca de 80 ms quando o mouse passa antes pelo link.
 
-- `mocks/db.ts` é um único store consistente (catálogo, usuários, sessões, favoritos, carrinhos, cotações, pedidos, idempotência, carteiras, conexões), persistido em `localStorage` (`kurio.mockdb.v1`).
-- Os fixtures são **determinísticos** (PRNG com seed fixa): 60 NFTs, 9 coleções e 3 redes, sendo os 9 primeiros idênticos ao Figma. Há 2 usuários, carteiras e favoritos.
-- `?mock-reset=1` ou `__kurio.reset()` restaura integralmente o seed e a configuração padrão.
-- Cenários e latência são configuráveis por URL, painel ou console e reproduzíveis (ver README).
-- O pagamento é resolvido por um timer que é rearmado a partir do estado persistido depois de um refresh (`resumePendingOrders`).
+## REST e tempo real juntos
 
-## 9. Acessibilidade
+O REST é a fonte da verdade e os eventos só adiantam mudanças no cache. Quando o socket reconecta, as telas abertas recarregam catálogo, carrinho, cotação e pedidos, para cobrir o que se perdeu durante a queda.
 
-- Link "Pular para o conteúdo", landmarks (`header`, `nav`, `main`, `footer`) e um `h1` por página.
-- Foco visível global (`:focus-visible` com contorno `#E89B55`). Diálogos e drawers (Radix) prendem e devolvem o foco.
-- Campos de formulário via `Field`: label associado, indicação de obrigatório com texto para leitor de tela, `aria-invalid`, `aria-describedby` para erros e foco no primeiro campo inválido.
-- Feedback de mutations e de tempo real via `sonner` (aria-live) e regiões `role=status`.
-- Estados não dependem só de cor: aria-pressed, aria-current, ícones, texto ("ESGOTADO", "Preço atualizado").
-- Skeletons com shimmer desativado em `prefers-reduced-motion`.
+Para pedido pendente, a tela do pedido busca o status ao abrir, o que cobre o refresh, e confere de novo a cada 15 s como garantia. Enquanto houver um pedido pendente, o checkout não deixa iniciar outra compra. Quando o tempo real cai, aparece um aviso de "reconectando".
 
-## 10. Desvios em relação ao Figma e decisões de UX
+## Mocks
 
-- **Assets:** as quatro ilustrações (Emerald Ape, Sage/Violet Nomad, Ivory Baron e Golden Beat) foram extraídas das renderizações dos frames do Figma em 1x (cerca de 240–430 px) e servidas localmente em WebP (`public/nfts/`). Os 60 NFTs do catálogo reutilizam essas quatro artes, como no próprio Figma. Os ícones vêm de `lucide-react`; os ícones de marca (redes sociais, Google, Facebook), que a lucide não inclui mais, são SVGs inline. A fonte Roboto Mono é self-hosted via `@fontsource`.
-- **Acessibilidade em relação ao layout:**
-  - os pontos dos carrosséis têm área de toque de 24 px (o ponto visual continua com 8/12 px);
-  - os filtros mostram um indicador tipo checkbox além da cor;
-  - os inputs de login e cadastro, que no Figma só têm placeholder, ganharam label visualmente oculto;
-  - no mobile, as ações do card ficam reduzidas ao coração (como no Figma) e as demais vão para o detalhe.
-- Os links "Criadores", "Aprenda", editoriais, suporte, atividade, ofertas, downloads, newsletter e login social ficam visíveis para preservar o layout, mas avisam "indisponível nesta demonstração" em vez de simular sucesso.
-- Login e Cadastro no desktop são modais sobre um fundo decorativo inerte (o Figma mostra o modal sobre a home). No mobile, são telas cheias, como nos frames mobile.
-- O "Mercado" do menu leva ao catálogo da home (`/#catalogo`), já que não existe frame separado de mercado.
-- Busca: o desktop ganhou um campo de busca visível na barra do catálogo e no ícone de lupa do header, porque o Figma só mostra o ícone.
-- O checkout tem uma etapa explícita de **revisão** antes do envio, exigida pelo enunciado.
+Todo o estado simulado fica em `mocks/db.ts` e é salvo no `localStorage`. Os dados são gerados com semente fixa, então são sempre os mesmos: 60 NFTs, 9 coleções e 3 redes, sendo os 9 primeiros iguais aos do Figma. Existem 2 usuários de teste.
 
-## 11. Limitações conhecidas
+O pagamento é resolvido por um timer, que é reativado se a página for recarregada no meio do processo.
 
-- O WebSocket simulado vive na página: não há servidor real nem rooms/namespaces (ver seção 3).
-- O service worker do MSW é registrado na primeira visita, o que acrescenta latência ao primeiro carregamento (ver `lighthouse/ANALYSIS.md`).
-- `tldts` (Public Suffix List, puxada pelo cookie store do MSW via `tough-cookie`) é substituído por um stub em `src/mocks/stubs/tldts.ts` (alias no `vite.config.ts`). A app não usa cookies; o ganho foi de cerca de 270 kB no chunk dos mocks.
-- A persistência do mock é por navegador (`localStorage`): duas abas compartilham o estado, dois navegadores não.
+### Cenários
+
+| Cenário | O que acontece |
+| --- | --- |
+| `default` | tudo funciona |
+| `catalog-empty` | catálogo vazio |
+| `catalog-error` | o catálogo responde 500 |
+| `flaky` | a primeira tentativa de cada GET falha com 503 e o retry recupera |
+| `out-of-order` | as respostas do catálogo alternam entre lentas e rápidas |
+| `offline` | toda requisição falha na rede |
+| `favorite-fail` | favoritar responde 500 e a tela desfaz |
+| `session-expired` | toda requisição autenticada responde 401 |
+| `price-change-checkout` | ao confirmar, o preço do primeiro item sobe 0.10 ETH |
+| `sold-out-checkout` | ao confirmar, a edição do primeiro item esgota |
+| `order-timeout` | o pedido é criado, mas a resposta é 504; o reenvio recupera o mesmo pedido |
+| `payment-declined` | o pagamento é recusado |
+| `payment-hold` | o pagamento fica pendente até ser resolvido pelo console |
+| `wallet-reject` | a carteira recusa a conexão |
+| `validation-error` | perfil e carteiras respondem 422 com erros nos campos |
+
+Latências: `none` (0 ms), `fast` (150 a 300 ms, padrão), `slow` (2,5 s) e `variable` (100 a 1800 ms).
+
+### Reproduzindo os fluxos de falha
+
+1. **Preço muda com o item no carrinho.** Entre como Ana, adicione o Emerald Ape #042 e, com o carrinho aberto, rode `__kurio.updateNft('emerald-ape-042', { price: '1.29' })`. O aviso aparece e o total se atualiza. No checkout, a confirmação fica bloqueada até você aceitar o novo valor.
+2. **Edição esgota.** Rode `__kurio.updateNft('emerald-ape-042', { editions: { '1-50': 0 } })` ou use o cenário `sold-out-checkout`.
+3. **Timeout na compra.** Com `?scenario=order-timeout`, finalize a compra. A tela mostra que está recuperando o pedido e termina no mesmo pedido. `__kurio.pendingOrders()` mostra só um.
+4. **Pagamento recusado.** Com `?scenario=payment-declined`, o pedido é recusado e o carrinho continua igual.
+5. **Tempo real cai com pedido pendente.** Use `?scenario=payment-hold`, confirme a compra e rode `__kurio.realtime.drop()`. Recarregue a página, rode `__kurio.realtime.restore()` e depois `__kurio.resolveOrder('<id>', 'confirmed')`. O recibo aparece sem pedido duplicado.
+6. **Sessão expira no checkout.** Com o checkout aberto, rode `__kurio.expireSessions()` e faça qualquer ação. Você vai para o login e, ao entrar, volta ao checkout com tudo preenchido.
+7. **Evento repetido ou antigo.** Rode `__kurio.realtime.replayLast()` ou `__kurio.realtime.sendStale('emerald-ape-042')`. Nada muda na tela.
+8. **Erro e nova tentativa.** Com `?scenario=catalog-error&latency=slow`, você vê o carregamento e depois o erro. Mude para `default` no painel e clique em **Tentar novamente**.
+
+## Acessibilidade
+
+- Link para pular ao conteúdo, landmarks e um `h1` por página.
+- Foco visível em tudo. Modais e gavetas prendem e devolvem o foco.
+- Todo campo tem label, os erros são lidos pelo leitor de tela e o foco vai para o primeiro campo inválido.
+- Avisos de ações e do tempo real são anunciados.
+- Nenhum estado depende só de cor: há ícones e textos como "ESGOTADO" e "Preço atualizado".
+- Animações respeitam a preferência por menos movimento.
+
+O axe roda nos testes em 10 telas, nos dois tamanhos. A única exceção conhecida são os pontos do carrossel do topo da home, que ficaram menores que 24 px para seguir o Figma.
+
+## Diferenças em relação ao Figma
+
+- As ilustrações dos NFTs foram extraídas das imagens do próprio Figma em resolução 1x e convertidas para WebP. Os 60 NFTs reutilizam essas 4 artes, como o Figma faz.
+- Os ícones vêm do `lucide-react`. Os de marca (Google, Facebook e redes sociais) são SVGs próprios, porque a lucide não tem mais esses ícones. A fonte Roboto Mono é servida pelo próprio projeto.
+- Os inputs de login, que no Figma só têm placeholder, ganharam label invisível para leitores de tela.
+- No mobile, o card de NFT mostra só o coração, como no Figma. As outras ações ficam no detalhe.
+- Links sem tela no Figma (Criadores, Aprenda, artigos, suporte, login social etc.) continuam no layout, mas avisam que não estão disponíveis na demonstração.
+- No desktop, login e cadastro abrem como modal sobre a home. No mobile, são telas inteiras.
+- "Mercado" leva ao catálogo da home, porque não existe uma tela separada para ele.
+- O Figma não mostra os destaques e o blog no mobile, então eles viraram carrosséis com arrasto. Nos destaques, a imagem fica em cima e o texto embaixo.
+- O checkout ganhou uma etapa de revisão antes de enviar, pedida no enunciado.
+
+## Limitações
+
+- O WebSocket é simulado dentro da página, sem servidor real.
+- O service worker do MSW é registrado na primeira visita, o que deixa o primeiro carregamento um pouco mais lento. Mais detalhes em [lighthouse/ANALYSIS.md](./lighthouse/ANALYSIS.md).
+- A biblioteca `tldts`, que o MSW puxa indiretamente, foi trocada por uma versão vazia em `src/mocks/stubs/tldts.ts`. A app não usa cookies, e isso tirou cerca de 270 kB do bundle.
+- Os dados simulados ficam no navegador: duas abas compartilham o estado, dois navegadores não.
