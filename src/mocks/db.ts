@@ -37,14 +37,6 @@ import {
   type SeedUser,
 } from './fixtures'
 
-/**
- * In-browser "server" state for the MSW handlers. All REST responses and all
- * Socket.IO events are derived from this single store, so catalog, cart,
- * favorites, profile, wallets and orders stay consistent with each other.
- * It is persisted to localStorage to survive refreshes; `resetDb()` restores
- * the deterministic seed.
- */
-
 const STORAGE_KEY = 'kurio.mockdb.v1'
 const SESSION_TTL_MS = 2 * 60 * 60 * 1000
 const QUOTE_TTL_MS = 10 * 60 * 1000
@@ -69,7 +61,7 @@ interface CartRecord {
 
 interface OrderRecord extends Order {
   cartId: string
-  /** When the simulated chain resolves the payment (ms epoch) or null = manual. */
+
   resolveAt: number | null
   outcome: Exclude<OrderStatus, 'pending'> | null
   released: boolean
@@ -144,7 +136,6 @@ export function saveDb() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
   } catch {
-    /* quota exceeded or storage disabled: keep in memory */
   }
 }
 
@@ -166,10 +157,6 @@ function nextId(prefix: string) {
 }
 
 const now = () => new Date().toISOString()
-
-// ---------------------------------------------------------------------------
-// Event bus (consumed by the Socket.IO mock in realtime.ts)
-// ---------------------------------------------------------------------------
 
 type Listener = (event: RealtimeEvent) => void
 const listeners = new Set<Listener>()
@@ -230,10 +217,6 @@ function publishOrder(order: OrderRecord) {
   publish(event)
 }
 
-// ---------------------------------------------------------------------------
-// Catalog
-// ---------------------------------------------------------------------------
-
 export function toSummary(n: NftDetail): NftSummary {
   return {
     id: n.id,
@@ -269,7 +252,6 @@ export function listCatalog(query: Required<Pick<CatalogQuery, 'sort' | 'tab' | 
   const matchesTab = (n: NftDetail, index: number) =>
     query.tab === 'all' ? true : query.tab === 'new' ? index < 18 : n.rarity !== 'comum' || n.compareAtPrice !== null
 
-  // Facet counts respect every other active filter (standard faceted search).
   const base = state.nfts.filter((n, i) => matchesText(n) && matchesPrice(n) && matchesTab(n, i))
   const byNetwork = (n: NftDetail) => networks.length === 0 || networks.includes(n.network)
   const byCollection = (n: NftDetail) => collections.length === 0 || collections.includes(n.collection)
@@ -329,7 +311,6 @@ export function listCatalog(query: Required<Pick<CatalogQuery, 'sort' | 'tab' | 
   }
 }
 
-/** Mutates price / availability and broadcasts `nft.updated`. */
 export function updateNft(
   id: string,
   patch: { price?: string; compareAtPrice?: string | null; editions?: Partial<Record<EditionId, number>> },
@@ -350,10 +331,6 @@ export function updateNft(
   publishNft(nft)
   return nft
 }
-
-// ---------------------------------------------------------------------------
-// Users & sessions
-// ---------------------------------------------------------------------------
 
 export async function hashPassword(salt: string, password: string) {
   const bytes = new TextEncoder().encode(`${salt}:${password}`)
@@ -446,15 +423,10 @@ export function revokeSession(token: string) {
   saveDb()
 }
 
-/** Test/demo hook: expire every active session (simulates TTL elapsing). */
 export function expireAllSessions() {
   for (const s of state.sessions) s.expiresAt = new Date(Date.now() - 1000).toISOString()
   saveDb()
 }
-
-// ---------------------------------------------------------------------------
-// Favorites
-// ---------------------------------------------------------------------------
 
 export function listFavorites(userId: string) {
   return state.favorites[userId] ?? []
@@ -469,10 +441,6 @@ export function setFavorite(userId: string, nftId: string, on: boolean) {
   return state.favorites[userId]
 }
 
-// ---------------------------------------------------------------------------
-// Cart
-// ---------------------------------------------------------------------------
-
 function newCart(ownerId: string | null): CartRecord {
   const cart: CartRecord = { id: nextId('cart'), ownerId, lines: [], couponCode: null, version: 1, updatedAt: now() }
   state.carts[cart.id] = cart
@@ -480,10 +448,6 @@ function newCart(ownerId: string | null): CartRecord {
   return cart
 }
 
-/**
- * Resolve the cart for a request: the user's cart when authenticated,
- * otherwise the guest cart identified by the X-Cart-Id header (created on demand).
- */
 export function resolveCart(userId: string | null, guestCartId: string | null, create = true): CartRecord | null {
   if (userId) {
     const id = state.userCarts[userId]
@@ -509,7 +473,6 @@ export function maxQuantityFor(nft: NftDetail, editionId: EditionId) {
   return Math.min(edition?.available ?? 0, nft.maxPerOrder)
 }
 
-/** Merge a guest cart into the user's cart on login/register (quantities summed, capped). */
 export function mergeGuestCart(userId: string, guestCartId: string | undefined) {
   const userCart = resolveCart(userId, null)!
   if (!guestCartId) return userCart
@@ -633,10 +596,6 @@ export function removeCoupon(cart: CartRecord) {
   touch(cart)
 }
 
-// ---------------------------------------------------------------------------
-// Quote
-// ---------------------------------------------------------------------------
-
 export function buildQuote(cart: CartRecord, network: Network): Quote {
   const view = cartView(cart)
   const issues: QuoteIssue[] = []
@@ -693,7 +652,7 @@ export function buildQuote(cart: CartRecord, network: Network): Quote {
     expiresAt: new Date(Date.now() + QUOTE_TTL_MS).toISOString(),
     fingerprint,
   }
-  // Keep only recent quotes.
+
   const ids = Object.keys(state.quotes)
   if (ids.length > 40) for (const id of ids.slice(0, ids.length - 40)) delete state.quotes[id]
   state.quotes[quote.id] = quote
@@ -704,10 +663,6 @@ export function buildQuote(cart: CartRecord, network: Network): Quote {
 export function findQuote(id: string) {
   return state.quotes[id]
 }
-
-// ---------------------------------------------------------------------------
-// Wallets & connections
-// ---------------------------------------------------------------------------
 
 export function listWallets(userId: string) {
   return state.wallets[userId] ?? []
@@ -751,10 +706,6 @@ export function disconnectWallet(id: string) {
   saveDb()
 }
 
-// ---------------------------------------------------------------------------
-// Orders
-// ---------------------------------------------------------------------------
-
 const timers = new Map<string, ReturnType<typeof setTimeout>>()
 
 export function findOrder(id: string) {
@@ -780,7 +731,7 @@ function adjustStock(lines: QuoteLine[], direction: -1 | 1) {
     const nft = findNft(line.nftId)
     const edition = nft?.editions.find((e) => e.id === line.editionId)
     if (!nft || !edition) continue
-    // Open editions have no fixed supply: availability stays constant.
+
     if (edition.supply !== null) {
       edition.available = Math.max(0, edition.available + direction * line.quantity)
     }
@@ -834,7 +785,7 @@ export function createOrder(params: {
   }
   state.orders[order.id] = order
   state.idempotency[params.idempotencyKey] = { userId: params.userId, fingerprint: params.fingerprint, orderId: order.id }
-  // Reserve stock while the payment is pending.
+
   adjustStock(order.lines, -1)
   saveDb()
   scheduleResolution(order)
@@ -850,7 +801,7 @@ function txHashFor(orderId: string) {
 
 export function resolveOrder(orderId: string, outcome: 'confirmed' | 'declined') {
   const order = state.orders[orderId]
-  if (!order || order.status !== 'pending') return order // terminal states never change
+  if (!order || order.status !== 'pending') return order
   const t = timers.get(orderId)
   if (t) clearTimeout(t)
   timers.delete(orderId)
@@ -861,7 +812,7 @@ export function resolveOrder(orderId: string, outcome: 'confirmed' | 'declined')
   if (outcome === 'confirmed') {
     order.txHash = txHashFor(order.id)
     order.explorerUrl = `https://sepolia.etherscan.io/tx/${order.txHash}`
-    // Remove only the purchased items/quantities from the cart.
+
     const cart = state.carts[order.cartId]
     if (cart) {
       for (const line of order.lines) {
@@ -897,7 +848,6 @@ function scheduleResolution(order: OrderRecord) {
   )
 }
 
-/** After a reload the in-memory timers are gone: re-arm them from persisted state. */
 export function resumePendingOrders() {
   for (const order of Object.values(state.orders)) scheduleResolution(order)
 }

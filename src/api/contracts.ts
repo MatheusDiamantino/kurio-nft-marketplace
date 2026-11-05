@@ -1,40 +1,27 @@
-/**
- * REST + realtime contracts shared by the Axios client, TanStack Query hooks,
- * the UI and the MSW mock server. This file is the single source of truth:
- * if a shape changes here, both the client and the mocks fail to type-check.
- *
- * Monetary values (ETH) always travel as decimal strings ("1.19", "0.016").
- * Quantities are integers.
- */
-
 export type EthAmount = string
 export type IsoDate = string
 
-// ---------------------------------------------------------------------------
-// Errors
-// ---------------------------------------------------------------------------
-
 export type ApiErrorCode =
-  | 'VALIDATION_ERROR' // 422 — field-level errors in `fields`
-  | 'UNAUTHENTICATED' // 401 — no / unknown token
-  | 'SESSION_EXPIRED' // 401 — token expired or revoked
-  | 'INVALID_CREDENTIALS' // 401 — login failed
-  | 'FORBIDDEN' // 403 — resource belongs to another user
-  | 'NOT_FOUND' // 404
-  | 'EMAIL_TAKEN' // 409 — register / profile conflict
-  | 'USERNAME_TAKEN' // 409
-  | 'OUT_OF_STOCK' // 409 — edition availability conflict
-  | 'QUOTE_STALE' // 409 — price / availability / coupon / fee changed
-  | 'IDEMPOTENCY_CONFLICT' // 409 — key reused with a different payload
-  | 'WALLET_REJECTED' // 409 — user rejected the connection in the wallet
-  | 'WALLET_DISCONNECTED' // 409 — wallet must be (re)connected
-  | 'COUPON_INVALID' // 422
-  | 'COUPON_EXPIRED' // 422
-  | 'GATEWAY_TIMEOUT' // 504 — upstream timed out (operation may have happened)
-  | 'SERVICE_UNAVAILABLE' // 503 — transient failure, safe to retry
-  | 'INTERNAL_ERROR' // 500
-  | 'NETWORK_ERROR' // client-side: no response
-  | 'TIMEOUT' // client-side: request aborted by timeout
+  | 'VALIDATION_ERROR'
+  | 'UNAUTHENTICATED'
+  | 'SESSION_EXPIRED'
+  | 'INVALID_CREDENTIALS'
+  | 'FORBIDDEN'
+  | 'NOT_FOUND'
+  | 'EMAIL_TAKEN'
+  | 'USERNAME_TAKEN'
+  | 'OUT_OF_STOCK'
+  | 'QUOTE_STALE'
+  | 'IDEMPOTENCY_CONFLICT'
+  | 'WALLET_REJECTED'
+  | 'WALLET_DISCONNECTED'
+  | 'COUPON_INVALID'
+  | 'COUPON_EXPIRED'
+  | 'GATEWAY_TIMEOUT'
+  | 'SERVICE_UNAVAILABLE'
+  | 'INTERNAL_ERROR'
+  | 'NETWORK_ERROR'
+  | 'TIMEOUT'
 
 export interface ApiErrorBody {
   error: {
@@ -44,10 +31,6 @@ export interface ApiErrorBody {
     details?: unknown
   }
 }
-
-// ---------------------------------------------------------------------------
-// Catalog
-// ---------------------------------------------------------------------------
 
 export const NETWORKS = ['ethereum', 'polygon', 'solana'] as const
 export type Network = (typeof NETWORKS)[number]
@@ -79,7 +62,7 @@ export type Rarity = 'comum' | 'raro' | 'lendario'
 export interface Edition {
   id: EditionId
   label: string
-  /** null = open edition (no fixed supply) */
+
   supply: number | null
   available: number
 }
@@ -91,14 +74,14 @@ export interface NftSummary {
   image: string
   imageAlt: string
   price: EthAmount
-  /** Shown struck-through when the NFT is on sale. */
+
   compareAtPrice: EthAmount | null
   collection: CollectionSlug
   network: Network
   rarity: Rarity
   listedAt: IsoDate
   totalAvailable: number
-  /** Monotonic version — bumped on every price/availability change. */
+
   version: number
 }
 
@@ -146,14 +129,10 @@ export interface CatalogResponse {
     networks: Facet<Network>[]
     priceRange: { min: EthAmount; max: EthAmount }
   }
-  /** Echo of the parameters the server applied (lets the UI verify it). */
+
   applied: Required<Omit<CatalogQuery, 'q' | 'minPrice' | 'maxPrice'>> &
     Pick<CatalogQuery, 'q' | 'minPrice' | 'maxPrice'>
 }
-
-// ---------------------------------------------------------------------------
-// Session & account
-// ---------------------------------------------------------------------------
 
 export interface User {
   id: string
@@ -174,7 +153,7 @@ export interface Session {
 export interface LoginRequest {
   email: string
   password: string
-  /** Guest cart to merge into the user's cart. */
+
   guestCartId?: string
 }
 
@@ -194,7 +173,6 @@ export interface UpdateProfileRequest {
 }
 
 export interface UpdateAvatarRequest {
-  /** data: URL (PNG/JPEG/WebP, ≤ 1 MB) */
   dataUrl: string
 }
 
@@ -203,18 +181,10 @@ export interface ChangePasswordRequest {
   newPassword: string
 }
 
-// ---------------------------------------------------------------------------
-// Favorites
-// ---------------------------------------------------------------------------
-
 export interface FavoritesResponse {
   nftIds: string[]
   items: NftSummary[]
 }
-
-// ---------------------------------------------------------------------------
-// Cart
-// ---------------------------------------------------------------------------
 
 export interface CartLine {
   nftId: string
@@ -227,9 +197,9 @@ export interface CartLine {
   imageAlt: string
   unitPrice: EthAmount
   lineTotal: EthAmount
-  /** Units still available for this NFT edition. */
+
   available: number
-  /** min(available, maxPerOrder) */
+
   maxQuantity: number
   nftVersion: number
 }
@@ -263,10 +233,6 @@ export interface UpdateCartItemRequest {
 export interface ApplyCouponRequest {
   code: string
 }
-
-// ---------------------------------------------------------------------------
-// Quote
-// ---------------------------------------------------------------------------
 
 export type QuoteIssueType =
   | 'PRICE_CHANGED'
@@ -315,13 +281,9 @@ export interface Quote {
   issues: QuoteIssue[]
   createdAt: IsoDate
   expiresAt: IsoDate
-  /** Fingerprint of prices/quantities/fee/coupon; any change → new fingerprint. */
+
   fingerprint: string
 }
-
-// ---------------------------------------------------------------------------
-// Wallets
-// ---------------------------------------------------------------------------
 
 export const WALLET_KINDS = ['metamask', 'walletconnect', 'coinbase'] as const
 export type WalletKind = (typeof WALLET_KINDS)[number]
@@ -352,10 +314,6 @@ export interface WalletConnection {
   status: 'connected'
   connectedAt: IsoDate
 }
-
-// ---------------------------------------------------------------------------
-// Orders
-// ---------------------------------------------------------------------------
 
 export type OrderStatus = 'pending' | 'confirmed' | 'declined'
 
@@ -400,16 +358,11 @@ export interface Order {
   declineReason: string | null
 }
 
-// ---------------------------------------------------------------------------
-// Realtime events (Socket.IO)
-// ---------------------------------------------------------------------------
-
 export interface RealtimeEnvelope<TType extends string, TResource extends string, TData> {
-  /** Stable, unique event identity — used for de-duplication. */
   id: string
   type: TType
   resource: { type: TResource; id: string }
-  /** Version of the resource after this event. Older/equal versions are ignored. */
+
   version: number
   occurredAt: IsoDate
   data: TData
@@ -435,11 +388,9 @@ export type OrderUpdatedEvent = RealtimeEnvelope<'order.updated', 'order', Order
 export type RealtimeEvent = NftUpdatedEvent | OrderUpdatedEvent
 
 export interface RealtimeHandshakeAuth {
-  /** Session token, or null for anonymous (catalog-only) subscriptions. */
   token: string | null
 }
 
-/** Headers understood by the API. */
 export const HEADERS = {
   cartId: 'X-Cart-Id',
   idempotencyKey: 'Idempotency-Key',

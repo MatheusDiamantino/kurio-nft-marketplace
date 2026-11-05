@@ -1,14 +1,9 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from './fixtures'
 
-/**
- * Regressão visual de início, detalhe, carrinho e pagamento.
- * Dados estáveis: seed determinística + latência zero; elementos dinâmicos
- * (toasts, indicador realtime) são mascarados.
- */
 async function settle(page: Page) {
   await page.evaluate(() => document.fonts.ready)
-  // Scroll through the page so lazy images load, then return to the top.
+  
   await page.evaluate(async () => {
     for (let y = 0; y < document.body.scrollHeight; y += 600) {
       window.scrollTo(0, y)

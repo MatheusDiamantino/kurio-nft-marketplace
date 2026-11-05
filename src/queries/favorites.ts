@@ -1,17 +1,19 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { FavoritesResponse } from '@/api/contracts'
 import { api } from '@/api/endpoints'
 import { useUser } from '@/auth/use-session'
 import { keys } from './keys'
 
+export const favoritesQuery = (uid: string) =>
+  queryOptions({
+    queryKey: keys.private.favorites(uid),
+    queryFn: ({ signal }) => api.favorites.list({ signal }),
+  })
+
 export function useFavorites() {
   const user = useUser()
-  return useQuery({
-    queryKey: keys.private.favorites(user?.id ?? 'anonymous'),
-    queryFn: ({ signal }) => api.favorites.list({ signal }),
-    enabled: !!user,
-  })
+  return useQuery({ ...favoritesQuery(user?.id ?? 'anonymous'), enabled: !!user })
 }
 
 export function useIsFavorite(nftId: string) {
@@ -19,10 +21,6 @@ export function useIsFavorite(nftId: string) {
   return data?.nftIds.includes(nftId) ?? false
 }
 
-/**
- * Optimistic toggle with rollback: the heart flips immediately; if the API
- * fails, the previous cache snapshot is restored and the user is told why.
- */
 export function useToggleFavorite() {
   const user = useUser()
   const qc = useQueryClient()

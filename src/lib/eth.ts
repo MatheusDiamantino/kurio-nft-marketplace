@@ -1,10 +1,6 @@
 import Decimal from 'decimal.js'
 import type { EthAmount } from '@/api/contracts'
 
-/**
- * ETH arithmetic on decimal strings. Never use JS numbers for money:
- * 0.1 + 0.2 !== 0.3. Shared by the UI and the mock server.
- */
 const D = Decimal.clone({ precision: 40, rounding: Decimal.ROUND_HALF_UP })
 
 export const ETH_DECIMALS = 18
@@ -14,7 +10,6 @@ export function eth(value: EthAmount | number): Decimal {
 }
 
 export function toEthString(value: Decimal): EthAmount {
-  // Normalised decimal string with no exponent and no trailing zeros.
   return value.toDecimalPlaces(ETH_DECIMALS).toFixed()
 }
 
@@ -44,10 +39,6 @@ export function isValidEth(value: string): boolean {
   return true
 }
 
-/**
- * Presentation: at least 2 decimals, up to 6, never rounding away precision
- * that matters (e.g. 26.846 stays 26.846, 1.2 → 1.20).
- */
 export function formatEth(value: EthAmount, { unit = true }: { unit?: boolean } = {}): string {
   const d = new D(value)
   const dp = Math.min(Math.max(d.decimalPlaces(), 2), 6)

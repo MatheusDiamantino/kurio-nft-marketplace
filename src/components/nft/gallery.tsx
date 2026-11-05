@@ -4,7 +4,6 @@ import type { NftDetail } from '@/api/contracts'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 
-/** Desktop gallery: 4 thumbnails + main image with zoom dialog. */
 export function NftGallery({ nft }: { nft: NftDetail }) {
   const [active, setActive] = useState(0)
   const images = nft.gallery.length ? nft.gallery : [nft.image]

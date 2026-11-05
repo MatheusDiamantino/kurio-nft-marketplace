@@ -1,8 +1,3 @@
-/**
- * Versioned audit configuration consumed by scripts/lighthouse.mjs.
- * Pages are audited with the default mock scenario and real assets
- * (images, fonts, MSW worker, Socket.IO) — no audit-only shortcuts.
- */
 export default {
   runs: 3,
   profiles: ['mobile', 'desktop'],

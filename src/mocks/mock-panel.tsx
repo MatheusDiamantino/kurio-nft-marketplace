@@ -2,12 +2,6 @@ import { useEffect, useState } from 'react'
 import { FlaskConical, X } from 'lucide-react'
 import type { MockConfig } from './config'
 
-/**
- * Demo-only control panel for the mock server (scenario, latency, realtime
- * outage, reset). It talks exclusively to `window.__kurio` — the same surface
- * Playwright uses — so every effect still flows through MSW/Socket.IO.
- * Hidden with `?mockPanel=0` (used for visual baselines and Lighthouse).
- */
 export function MockPanel() {
   const [open, setOpen] = useState(false)
   const [config, setConfig] = useState<MockConfig | null>(null)
@@ -30,11 +24,11 @@ export function MockPanel() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex items-center gap-2 rounded-full border border-line-soft bg-surface px-3 py-2 text-xs font-bold text-sand shadow-lg hover:text-brand-accent"
+          className="flex items-center gap-2 rounded-full border border-line-soft bg-surface p-2.5 text-xs font-bold text-sand shadow-lg hover:text-brand-accent md:px-3 md:py-2"
           aria-label="Abrir painel de cenários simulados"
         >
           <FlaskConical className="size-4" aria-hidden />
-          Mock
+          <span className="hidden md:inline">Mock</span>
         </button>
       ) : (
         <section

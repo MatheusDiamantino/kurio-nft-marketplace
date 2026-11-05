@@ -1,9 +1,5 @@
 import { useSyncExternalStore } from 'react'
 
-/**
- * Live notices produced by realtime events that the user must see where it
- * matters (cart / checkout): "price of X changed from A to B", "X sold out".
- */
 export interface LiveNotice {
   id: string
   nftId: string

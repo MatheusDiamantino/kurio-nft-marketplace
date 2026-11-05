@@ -1,4 +1,3 @@
-/** Outline envelope with a "THANK YOU" card, drawn after the Figma illustration. */
 export function ThankYouIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 68 82" width="68" height="82" fill="none" className={className} aria-hidden>

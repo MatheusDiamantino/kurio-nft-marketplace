@@ -4,14 +4,9 @@ Os números estão em [`summary.md`](./summary.md) (mediana de 3 execuções por
 
 ## Resultado final
 
-| Página | Perfil | Performance | Accessibility | Best Practices | SEO | LCP | CLS | TBT |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Início | mobile | 93 | 100 | 100 | 100 | 2,84 s | 0,001 | 186 ms |
-| Início | desktop | 99 | 100 | 100 | 100 | 0,84 s | 0,020 | 0 ms |
-| Detalhe | mobile | 92 | 100 | 100 | 100 | 2,79 s | 0,000 | 201 ms |
-| Detalhe | desktop | 99 | 100 | 100 | 100 | 0,82 s | 0,000 | 0 ms |
+Veja os números da última rodada em [`summary.md`](./summary.md). Na última medição: Performance mobile 92–93 e desktop 99–100; Accessibility 97 na Início e 100 no Detalhe; Best Practices e SEO 100. Todas as metas foram atingidas.
 
-Execuções individuais de Performance: início mobile 93/93/93, detalhe mobile 93/92/91; no desktop, 99–100 em todas. Todas as metas foram atingidas.
+**Variação:** na mesma máquina, o TBT mobile variou de ~190 a ~440 ms entre execuções (Performance 84–93), conforme a carga do sistema. A mediana de 3 execuções, pedida pelo enunciado, absorve parte desse ruído. Rodadas com a máquina ocupada chegaram a medianas de 88–89.
 
 ## Condições
 
@@ -25,7 +20,7 @@ Execuções individuais de Performance: início mobile 93/93/93, detalhe mobile 
 | Medição | Problema | Causa | Correção |
 | --- | --- | --- | --- |
 | Detalhe: Performance 76 (mobile) e 86 (desktop), CLS 0,27 | Layout shift | O `main` ficava vazio enquanto a rota lazy carregava e o footer aparecia no topo, depois era empurrado. A galeria não tinha largura fixa, então a coluna de informações se deslocava quando a imagem carregava. | `main` com `min-height: 100dvh`; galeria com largura fixa (`567px`) no desktop. O CLS foi para 0,000. |
-| Início: Accessibility 97 | `target-size` | Os pontos do carrossel do hero tinham área de toque de 8×8 px. | Área de toque de 24×24 px, mantendo o ponto visual de 8 px do Figma; o mesmo nos pontos do carrossel de relacionados. Accessibility 100. |
+| Início: Accessibility 97 | `target-size` | Os pontos do carrossel do hero têm área de toque menor que 24×24 px. | Nos relacionados, a área de toque foi para 24×24 px. No hero, ela chegou a 24 px (Accessibility 100), mas foi reduzida para 16×24 px a pedido de design, para aproximar os pontos como no Figma. Isso custa o item `target-size` (Accessibility 97, ainda acima da meta de 95). |
 | Mobile: Performance 87–90 (no limite), TBT ~170–290 ms | Tempo de script | O chunk do MSW tinha 477 kB, puxando a Public Suffix List inteira (`tldts`, via `tough-cookie`, usada só pelo cookie store do MSW). | Alias de `tldts` para um stub mínimo (`src/mocks/stubs/tldts.ts`). A app não usa cookies (autenticação por bearer token). O chunk caiu para 210 kB (63 kB gzip), o LCP mobile foi de ~3,4 s para ~2,8 s e a Performance para 92–93. |
 | — | Flash branco e LCP tardio | O `#root` ficava vazio até o MSW iniciar. | Fundo escuro inline, placeholder de boot e `preload` com `fetchpriority=high` da imagem do hero. |
 

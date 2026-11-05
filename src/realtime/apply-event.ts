@@ -15,15 +15,6 @@ import { compare, formatEth } from '@/lib/eth'
 import { keys } from '@/queries/keys'
 import { noticeStore } from './notices'
 
-/**
- * Applies a Socket.IO event to the TanStack Query cache.
- *
- * Guarantees:
- * - idempotent: an event id is applied at most once (duplicates ignored);
- * - monotonic: an event whose version is ≤ the newest known version of the
- *   resource is ignored, so an old event never regresses newer state;
- * - user isolation: order events for anyone but the current user are dropped.
- */
 export class EventApplier {
   private seen = new Set<string>()
   private seenOrder: string[] = []
@@ -37,7 +28,6 @@ export class EventApplier {
     this.currentUserId = currentUserId
   }
 
-  /** Returns true when the event changed client state. */
   apply(event: RealtimeEvent): boolean {
     if (!event || typeof event.id !== 'string' || !event.resource) return false
     if (this.seen.has(event.id)) return false
@@ -82,7 +72,6 @@ export class EventApplier {
         ? { ...n, price: data.price, compareAtPrice: data.compareAtPrice, totalAvailable: data.totalAvailable, version }
         : n
 
-    // Detail
     this.qc.setQueryData<NftDetail>(keys.catalog.detail(id), (old) => {
       if (!old || old.version >= version) return old
       return {
@@ -94,7 +83,6 @@ export class EventApplier {
       }
     })
 
-    // Catalog pages
     this.qc.setQueriesData<CatalogResponse>({ queryKey: keys.catalog.lists() }, (old) => {
       if (!old) return old
       const hit = old.items.find((i) => i.id === id)
@@ -102,14 +90,11 @@ export class EventApplier {
       return { ...old, items: old.items.map(patchSummary) }
     })
 
-    // Favorites lists
     this.qc.setQueriesData<FavoritesResponse>({ queryKey: keys.private.all }, (old) => {
       if (!old || !Array.isArray((old as FavoritesResponse).items)) return old
       return { ...old, items: old.items.map(patchSummary) }
     })
 
-    // Cart: if the NFT is in any cached cart, inform and refetch cart + quote
-    // from the API (the server is the authority for totals).
     const carts = this.qc.getQueriesData<Cart>({ queryKey: keys.cart.all })
     for (const [key, cart] of carts) {
       const lines = cart?.lines.filter((l) => l.nftId === id) ?? []
@@ -143,7 +128,7 @@ export class EventApplier {
     if (!uid || event.data.userId !== uid) return false
     const key = keys.private.order(uid, event.resource.id)
     const before = this.qc.getQueryData<Order>(key)
-    if (before && before.status !== 'pending') return false // terminal states never change
+    if (before && before.status !== 'pending') return false 
     if (before) {
       this.qc.setQueryData<Order>(key, {
         ...before,
@@ -156,7 +141,6 @@ export class EventApplier {
     }
     void this.qc.invalidateQueries({ queryKey: key })
     if (event.data.status !== 'pending') {
-      // Cart lost the purchased items (confirmed) or keeps them (declined) — resync.
       void this.qc.invalidateQueries({ queryKey: keys.cart.all })
       void this.qc.invalidateQueries({ queryKey: keys.quote.all })
       void this.qc.invalidateQueries({ queryKey: keys.catalog.all })

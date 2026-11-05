@@ -32,7 +32,6 @@ export function OrderPage() {
   const headingRef = useRef<HTMLHeadingElement>(null)
   const lastStatus = useRef<Order['status'] | null>(null)
 
-  // Terminal states: forget the pending marker and move focus to the result.
   useEffect(() => {
     if (!order || !user) return
     if (order.status !== 'pending') {
@@ -41,7 +40,6 @@ export function OrderPage() {
         try {
           sessionStorage.removeItem(`kurio.checkout.draft.${user.id}`)
         } catch {
-          /* ignore */
         }
       }
     }

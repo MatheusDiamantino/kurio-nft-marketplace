@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { NETWORKS, WALLET_KINDS, type UpsertWalletRequest, type Wallet, type WalletSlot } from '@/api/contracts'
-import { EnsInput, NativeSelect, TextInput } from '@/components/account/form-controls'
+import { EnsInput, FormSelect, TextInput } from '@/components/account/form-controls'
 import { Field } from '@/components/shared'
 import { applyServerErrors } from '@/lib/form-errors'
 import { useUpsertWallet } from '@/queries/account'
@@ -77,7 +77,7 @@ export function WalletForm({
 }: {
   slot: WalletSlot
   wallet?: Wallet
-  /** When set, the form mirrors these values (the "Igual à carteira principal" option). */
+  
   copyFrom?: Wallet
   idPrefix: string
 }) {
@@ -130,14 +130,22 @@ export function WalletForm({
         </Field>
         <Field label="Rede" required error={errors.network?.message}>
           {(p) => (
-            <NativeSelect {...p} {...form.register('network')}>
-              <option value="">Selecione uma rede</option>
-              {NETWORKS.map((n) => (
-                <option key={n} value={n}>
-                  {NETWORK_OPTIONS[n]}
-                </option>
-              ))}
-            </NativeSelect>
+            <Controller
+              control={form.control}
+              name="network"
+              render={({ field }) => (
+                <FormSelect
+                  {...p}
+                  ref={field.ref}
+                  name={field.name}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="Selecione uma rede"
+                  options={NETWORKS.map((n) => ({ value: n, label: NETWORK_OPTIONS[n] }))}
+                />
+              )}
+            />
           )}
         </Field>
         <Field label="Nome do perfil" required error={errors.profileName?.message}>
@@ -161,14 +169,22 @@ export function WalletForm({
         </Field>
         <Field label="Tipo de carteira" required error={errors.kind?.message}>
           {(p) => (
-            <NativeSelect {...p} {...form.register('kind')}>
-              <option value="">Selecione uma carteira</option>
-              {WALLET_KINDS.map((k) => (
-                <option key={k} value={k}>
-                  {KIND_OPTIONS[k]}
-                </option>
-              ))}
-            </NativeSelect>
+            <Controller
+              control={form.control}
+              name="kind"
+              render={({ field }) => (
+                <FormSelect
+                  {...p}
+                  ref={field.ref}
+                  name={field.name}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="Selecione uma carteira"
+                  options={WALLET_KINDS.map((k) => ({ value: k, label: KIND_OPTIONS[k] }))}
+                />
+              )}
+            />
           )}
         </Field>
         <Field label="Código de indicação" required error={errors.referralCode?.message}>

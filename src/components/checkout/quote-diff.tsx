@@ -48,11 +48,6 @@ export function diffQuotes(before: Quote, after: Quote): Change[] {
   return changes
 }
 
-/**
- * Shown when the quote the user reviewed is no longer valid (realtime update
- * or 409 QUOTE_STALE / OUT_OF_STOCK). Confirmation stays disabled until the
- * user explicitly accepts the new values.
- */
 export function QuoteChangedAlert({ before, after, onAccept }: { before: Quote; after: Quote; onAccept: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
   const changes = diffQuotes(before, after)

@@ -37,7 +37,7 @@ function Newsletter() {
       return
     }
     setError(null)
-    // Newsletter is out of scope: say so instead of faking a subscription.
+
     notifySoon('A inscrição na newsletter')
   }
   return (
@@ -87,7 +87,7 @@ export function Footer() {
                 {f.letter}
               </span>
               <h2 className="text-base font-bold text-cream">{f.title}</h2>
-              <p className="text-sm leading-[22px] text-brand">{f.text}</p>
+              <p className="text-sm leading-[22px] text-sand">{f.text}</p>
             </div>
           ))}
           <div className="lg:pl-4">

@@ -9,15 +9,21 @@ import {
 import type { QueryClient } from '@tanstack/react-query'
 import { sessionStore } from '@/auth/session-store'
 import { RootLayout } from '@/components/layout/root-layout'
+import { RouteError, RoutePending } from '@/components/layout/route-status'
 import { NotFoundPage } from '@/pages/not-found'
+import { orderQuery, profileQuery, walletsQuery } from '@/queries/account'
+import { cartQuery } from '@/queries/cart'
 import { nftQuery } from '@/queries/catalog'
+import { favoritesQuery } from '@/queries/favorites'
 import { validateHomeSearch, validateRedirectSearch } from '@/routes/search'
 
 export interface RouterContext {
   queryClient: QueryClient
 }
 
-/** Guard for private routes: send anonymous users to login, keeping where they were. */
+const cartOwner = () => sessionStore.get()?.user.id ?? 'guest'
+const userId = () => sessionStore.get()?.user.id
+
 function requireSession({ location }: { location: ParsedLocation }) {
   if (!sessionStore.get()) {
     throw redirect({ to: '/login', search: { redirect: location.href }, replace: true })
@@ -39,7 +45,6 @@ const homeRoute = createRoute({
 const nftRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/nft/$nftId',
-  // Warm the cache without blocking navigation; the page renders skeletons.
   loader: ({ context, params }) => {
     void context.queryClient.prefetchQuery(nftQuery(params.nftId))
   },
@@ -49,13 +54,23 @@ const nftRoute = createRoute({
 const cartRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/cart',
+  loader: ({ context }) => {
+    void context.queryClient.prefetchQuery(cartQuery(cartOwner()))
+  },
   component: lazyRouteComponent(() => import('@/pages/cart'), 'CartPage'),
 })
 
 const checkoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/checkout',
-  beforeLoad: requireSession,
+  loader: ({ context }) => {
+    void context.queryClient.prefetchQuery(cartQuery(cartOwner()))
+    const uid = userId()
+    if (uid) {
+      void context.queryClient.prefetchQuery(profileQuery(uid))
+      void context.queryClient.prefetchQuery(walletsQuery(uid))
+    }
+  },
   component: lazyRouteComponent(() => import('@/pages/checkout'), 'CheckoutPage'),
 })
 
@@ -63,6 +78,10 @@ const orderRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/orders/$orderId',
   beforeLoad: requireSession,
+  loader: ({ context, params }) => {
+    const uid = userId()
+    if (uid) void context.queryClient.prefetchQuery(orderQuery(uid, params.orderId))
+  },
   component: lazyRouteComponent(() => import('@/pages/order'), 'OrderPage'),
 })
 
@@ -98,18 +117,30 @@ const accountIndexRoute = createRoute({
 const profileRoute = createRoute({
   getParentRoute: () => accountRoute,
   path: 'profile',
+  loader: ({ context }) => {
+    const uid = userId()
+    if (uid) void context.queryClient.prefetchQuery(profileQuery(uid))
+  },
   component: lazyRouteComponent(() => import('@/pages/account/profile'), 'ProfilePage'),
 })
 
 const walletsRoute = createRoute({
   getParentRoute: () => accountRoute,
   path: 'wallets',
+  loader: ({ context }) => {
+    const uid = userId()
+    if (uid) void context.queryClient.prefetchQuery(walletsQuery(uid))
+  },
   component: lazyRouteComponent(() => import('@/pages/account/wallets'), 'WalletsPage'),
 })
 
 const favoritesRoute = createRoute({
   getParentRoute: () => accountRoute,
   path: 'favorites',
+  loader: ({ context }) => {
+    const uid = userId()
+    if (uid) void context.queryClient.prefetchQuery(favoritesQuery(uid))
+  },
   component: lazyRouteComponent(() => import('@/pages/account/favorites'), 'FavoritesPage'),
 })
 
@@ -129,10 +160,15 @@ export function createAppRouter(queryClient: QueryClient) {
     routeTree,
     context: { queryClient },
     defaultPreload: 'intent',
+    defaultPreloadDelay: 30,
     defaultPreloadStaleTime: 0,
+    defaultPendingComponent: RoutePending,
+    defaultPendingMs: 600,
+    defaultErrorComponent: RouteError,
+    defaultViewTransition: {
+      types: ({ fromLocation, pathChanged }) => (fromLocation && pathChanged ? ['page'] : false),
+    },
     scrollRestoration: true,
-    // Page-to-page navigation jumps to the top instantly; smooth scrolling is
-    // reserved for in-page anchors (see html { scroll-behavior } in index.css).
     scrollRestorationBehavior: 'instant',
     defaultNotFoundComponent: NotFoundPage,
   })

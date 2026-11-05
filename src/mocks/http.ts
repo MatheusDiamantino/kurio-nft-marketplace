@@ -17,7 +17,6 @@ export function bearer(request: Request) {
   return header?.startsWith('Bearer ') ? header.slice(7) : null
 }
 
-/** Returns the authenticated user or a 401 response. */
 export function requireAuth(request: Request) {
   const token = bearer(request)
   if (getConfig().scenario === 'session-expired' && token) {
@@ -33,16 +32,11 @@ export function requireAuth(request: Request) {
   return { user: lookup.user, session: lookup.session } as const
 }
 
-/** Optional auth: user when the token is valid, null otherwise (never errors). */
 export function optionalUser(request: Request) {
   const lookup = lookupSession(bearer(request))
   return lookup.status === 'valid' ? lookup.user : null
 }
 
-/**
- * Wraps a resolver with the configured network conditions:
- * offline, latency profiles, out-of-order catalog and "flaky" first attempts.
- */
 export function withNetwork<P extends PathParams, B extends DefaultBodyType>(
   kind: 'catalog' | 'default',
   resolver: HttpResponseResolver<P, B>,

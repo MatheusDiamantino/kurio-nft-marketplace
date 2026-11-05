@@ -5,12 +5,9 @@ import { useCart } from '@/queries/cart'
 import { cn } from '@/lib/utils'
 import { CartButton, Logo } from './header'
 
-/** Compact top bar for small screens (pages without their own mobile hero). */
 export function MobileTopBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  // Home and NFT detail draw their own mobile chrome (search bar / hero) per the Figma.
-  // Login/Cadastro mobile are full-screen with their own big logo.
-  // Cart and checkout have their own mobile header (back button + title) per the Figma mobile frames.
+  
   const own = ['/', '/login', '/register', '/cart', '/checkout']
   if (own.includes(pathname) || pathname.startsWith('/nft/')) return null
   return (
@@ -66,11 +63,15 @@ export function MobileTabBar() {
           </button>
         </li>
         <li>
-          <Link to="/cart" className={cn(ITEM, 'relative', active('/cart') && 'text-brand')} aria-label={`Carrinho, ${count} itens`}>
+          <Link to="/cart" className={cn(ITEM, 'relative', active('/cart') && 'text-brand')} aria-current={active('/cart') ? 'page' : undefined}>
             <ShoppingCart className="size-5" aria-hidden />
             Carrinho
             {count > 0 && (
-              <span className="absolute top-0 right-1 min-w-4 rounded-full bg-brand px-1 text-center text-[10px] leading-4 text-ink">{count}</span>
+              <span className="absolute top-0 right-1 min-w-4 rounded-full bg-brand px-1 text-center text-[10px] leading-4 text-ink">
+                <span className="sr-only">, </span>
+                {count}
+                <span className="sr-only"> {count === 1 ? 'item' : 'itens'}</span>
+              </span>
             )}
           </Link>
         </li>

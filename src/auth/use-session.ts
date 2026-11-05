@@ -13,7 +13,6 @@ export function useUser() {
   return useSession()?.user ?? null
 }
 
-/** Cache-owner key for the cart: the user id, or 'guest'. */
 export function useCartOwner() {
   return useUser()?.id ?? 'guest'
 }

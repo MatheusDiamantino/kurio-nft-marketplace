@@ -1,27 +1,25 @@
-import { getRouteApi } from '@tanstack/react-router'
+import { useMatch, useNavigate } from '@tanstack/react-router'
 import type { HomeSearch } from '@/routes/search'
 
-const route = getRouteApi('/')
+const EMPTY: HomeSearch = {}
 
-/**
- * Catalog URL state. Every filter/sort/tab/search change resets pagination
- * (page omitted) and keeps the scroll position (resetScroll: false).
- */
 export function useHomeSearch() {
-  const search = route.useSearch()
-  const navigate = route.useNavigate()
+  const match = useMatch({ from: '/', shouldThrow: false })
+  const search: HomeSearch = match?.search ?? EMPTY
+  const navigate = useNavigate()
 
   const update = (patch: Partial<HomeSearch>, opts: { replace?: boolean } = {}) =>
     navigate({
-      search: (prev) => ({ ...prev, ...patch, page: undefined }),
+      to: '/',
+      search: (prev: HomeSearch) => ({ ...prev, ...patch, page: undefined }),
       replace: opts.replace,
       resetScroll: false,
     })
 
   const setPage = (page: number) =>
-    navigate({ search: (prev) => ({ ...prev, page: page > 1 ? page : undefined }), resetScroll: false })
+    navigate({ to: '/', search: (prev: HomeSearch) => ({ ...prev, page: page > 1 ? page : undefined }), resetScroll: false })
 
-  const clear = () => navigate({ search: {}, resetScroll: false })
+  const clear = () => navigate({ to: '/', search: {}, resetScroll: false })
 
   return { search, update, setPage, clear }
 }

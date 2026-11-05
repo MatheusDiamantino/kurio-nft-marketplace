@@ -8,12 +8,6 @@ import type {
   Wallet,
 } from '@/api/contracts'
 
-/**
- * Deterministic fixtures. Everything is derived from a fixed seed so the
- * catalog, prices and availability are identical on every reset — which is
- * what makes Playwright runs and visual baselines stable.
- */
-
 export const FIXTURE_NOW = '2026-07-29T12:00:00.000Z'
 
 export function mulberry32(seed: number) {
@@ -72,7 +66,6 @@ interface Seed {
   rarity: Rarity
 }
 
-/** The first nine items reproduce the Figma catalog exactly. */
 const FIGMA_SEEDS: Seed[] = [
   { name: 'Emerald Ape #042', art: 'emerald-ape', price: '1.19', collection: 'arte-digital', network: 'ethereum', rarity: 'raro' },
   { name: 'Sage Nomad #009', art: 'sage-nomad', price: '1.69', collection: 'arte-digital', network: 'ethereum', rarity: 'comum' },
@@ -103,7 +96,7 @@ function buildSeeds(): Seed[] {
     const name = `${PREFIXES[Math.floor(rand() * PREFIXES.length)]} ${SUFFIXES[Math.floor(rand() * SUFFIXES.length)]} #${String(Math.floor(rand() * 900) + 100)}`
     if (used.has(name)) continue
     used.add(name)
-    const cents = Math.floor(rand() * 1200) + 2 // 0.02 – 12.01 ETH
+    const cents = Math.floor(rand() * 1200) + 2
     const price = (cents / 100).toFixed(2)
     const onSale = rand() < 0.12
     const r = rand()
@@ -121,7 +114,6 @@ function buildSeeds(): Seed[] {
 }
 
 function editionsFor(index: number, rand: () => number): Edition[] {
-  // Index 0 (Emerald Ape) keeps the Figma state: 1/1 sold out, the rest available.
   const one = index === 0 ? 0 : rand() < 0.5 ? 0 : 1
   return [
     { id: '1-1', label: '1/1', supply: 1, available: one },
@@ -185,7 +177,6 @@ export interface SeedUser {
   passwordHash: string
 }
 
-/** Password for both demo users: Kurio@123 (stored only as salted SHA-256). */
 export const SEED_USERS: SeedUser[] = [
   {
     id: 'u_ana',
@@ -250,7 +241,6 @@ export function seedWallets(): Record<string, Wallet[]> {
   }
 }
 
-/** Favorites seeded per user (different sets → easy to see isolation). */
 export const SEED_FAVORITES: Record<string, string[]> = {
   u_ana: ['emerald-ape-042', 'ivory-baron-088'],
   u_bruno: ['golden-signal-160'],

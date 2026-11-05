@@ -7,6 +7,13 @@ import { SoonLink } from '@/components/soon'
 import { useCart } from '@/queries/cart'
 import { cn } from '@/lib/utils'
 
+export function scrollToCatalog() {
+  const el = document.getElementById('catalogo')
+  if (!el) return
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+}
+
 export function Logo({ className }: { className?: string }) {
   return (
     <Link to="/" className={cn('text-sm font-bold tracking-[0.1em] text-cream', className)} aria-label="Kurio — página inicial">
@@ -109,8 +116,8 @@ export function Header() {
   const isMarket = pathname.startsWith('/nft') || pathname.startsWith('/cart') || pathname.startsWith('/checkout')
 
   return (
-    <header className="hidden border-b border-line md:block">
-      <div className="container-page flex h-[68px] items-center justify-between gap-6">
+    <header className="hidden md:block">
+      <div className="container-page flex h-[68px] items-center justify-between gap-6 border-b border-line-soft">
         <Logo />
         <nav aria-label="Principal">
           <ul className="flex items-center gap-8">
@@ -128,6 +135,9 @@ export function Header() {
               <Link
                 to="/"
                 hash="catalogo"
+                onClick={() => {
+                  if (isHome) requestAnimationFrame(() => scrollToCatalog())
+                }}
                 className={cn(NAV_CLASS, isMarket && 'font-bold text-brand after:bg-brand')}
                 aria-current={isMarket ? 'page' : undefined}
               >
@@ -149,10 +159,12 @@ export function Header() {
             <Link
               to="/account/profile"
               className="ml-2 inline-flex items-center gap-2 rounded-sm px-1 py-1 text-sm text-cream hover:text-brand-accent"
-              aria-label={`Minha conta (${user.displayName})`}
             >
-              <Avatar user={user} size={32} />
+              <span aria-hidden>
+                <Avatar user={user} size={32} />
+              </span>
               <span className="max-w-32 truncate">{user.displayName}</span>
+              <span className="sr-only">, minha conta</span>
             </Link>
           ) : (
             <Link

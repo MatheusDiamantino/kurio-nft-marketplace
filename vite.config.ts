@@ -8,8 +8,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, 'src'),
-      // Drop the Public Suffix List pulled by MSW's cookie store (see the stub).
       tldts: path.resolve(import.meta.dirname, 'src/mocks/stubs/tldts.ts'),
+    },
+  },
+  server: {
+    watch: {
+      ignored: ['**/dist/**', '**/lighthouse/**', '**/test-results/**', '**/playwright-report/**', '**/tests/__screenshots__/**'],
     },
   },
   build: {

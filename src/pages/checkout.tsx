@@ -1,18 +1,20 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { AlertTriangle, ChevronLeft, Loader2 } from 'lucide-react'
-import type { CreateOrderRequest, Network, Quote, Wallet, WalletConnection } from '@/api/contracts'
+import { WALLET_KINDS, type CreateOrderRequest, type Network, type Quote, type Wallet, type WalletConnection, type WalletKind } from '@/api/contracts'
 import { isApiError } from '@/api/client'
 import { api } from '@/api/endpoints'
 import { useUser } from '@/auth/use-session'
 import { QuoteSummary } from '@/components/cart/quote-summary'
 import { CollectorForm, collectorSchema, type CollectorValues } from '@/components/checkout/collector-form'
 import { QuoteChangedAlert } from '@/components/checkout/quote-diff'
-import { NETWORK_LABEL, WalletPicker, walletLabel } from '@/components/checkout/wallet-picker'
+import { NETWORK_LABEL, WALLET_LABEL, WalletPicker, walletLabel } from '@/components/checkout/wallet-picker'
+import { WalletChip } from '@/components/layout/footer'
 import { Breadcrumb, EmptyState, ErrorState } from '@/components/shared'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatEth } from '@/lib/eth'
 import { applyServerErrors } from '@/lib/form-errors'
@@ -36,7 +38,11 @@ const EMPTY: CollectorValues = {
   note: '',
 }
 
-function readDraft(uid: string): (Partial<CollectorValues> & { walletId?: string }) | null {
+type Draft = Partial<CollectorValues> & { walletId?: string; walletKind?: WalletKind }
+
+const GUEST = 'anonymous'
+
+function readDraft(uid: string): Draft | null {
   try {
     return JSON.parse(sessionStorage.getItem(draftKey(uid)) ?? 'null')
   } catch {
@@ -44,7 +50,6 @@ function readDraft(uid: string): (Partial<CollectorValues> & { walletId?: string
   }
 }
 
-/** API field names → form field names. */
 const FIELD_MAP = {
   'collector.displayName': 'displayName',
   'collector.username': 'username',
@@ -58,7 +63,9 @@ const FIELD_MAP = {
 
 export function CheckoutPage() {
   const user = useUser()
-  const uid = user?.id ?? 'anonymous'
+  const guest = !user
+  const uid = user?.id ?? GUEST
+  const navigate = useNavigate()
   const qc = useQueryClient()
   const profile = useProfile()
   const walletsQuery = useWallets()
@@ -67,7 +74,19 @@ export function CheckoutPage() {
   const pending = usePendingOrder()
   const place = usePlaceOrder()
 
-  const draft = useMemo(() => readDraft(uid), [uid])
+  const draft = useMemo<Draft | null>(() => {
+    const own = readDraft(uid)
+    if (own || uid === GUEST) return own
+    
+    const fromGuest = readDraft(GUEST)
+    if (fromGuest) {
+      try {
+        sessionStorage.removeItem(draftKey(GUEST))
+      } catch {
+      }
+    }
+    return fromGuest
+  }, [uid])
   const form = useForm<CollectorValues>({
     resolver: zodResolver(collectorSchema),
     defaultValues: { ...EMPTY, ...draft },
@@ -76,6 +95,7 @@ export function CheckoutPage() {
   const network = form.watch('network') as Network
 
   const [walletId, setWalletId] = useState<string | null>(draft?.walletId ?? null)
+  const [walletKind, setWalletKind] = useState<WalletKind | null>(draft?.walletKind ?? null)
   const [connection, setConnection] = useState<WalletConnection | null>(null)
   const [connectError, setConnectError] = useState<string | null>(null)
   const [step, setStep] = useState<'form' | 'review'>('form')
@@ -89,12 +109,15 @@ export function CheckoutPage() {
   const secondary = wallets.find((w) => w.slot === 'secondary') ?? null
   const primary = wallets.find((w) => w.slot === 'primary') ?? null
 
-  // Prefill once profile + wallets arrive (only fields the draft didn't set).
   const prefilled = useRef(false)
   useEffect(() => {
     if (prefilled.current || !profile.data || !walletsQuery.data) return
     prefilled.current = true
-    const w = wallets.find((x) => x.id === draft?.walletId) ?? wallets.find((x) => x.slot === 'primary') ?? wallets[0]
+    const w =
+      wallets.find((x) => x.id === draft?.walletId) ??
+      wallets.find((x) => x.kind === draft?.walletKind) ??
+      wallets.find((x) => x.slot === 'primary') ??
+      wallets[0]
     if (w && !walletId) setWalletId(w.id)
     const base: CollectorValues = {
       ...EMPTY,
@@ -109,19 +132,16 @@ export function CheckoutPage() {
     form.reset({ ...base, ...Object.fromEntries(Object.entries(draft ?? {}).filter(([, v]) => v !== '' && v !== undefined)) })
   }, [profile.data, walletsQuery.data, wallets, draft, form, walletId])
 
-  // Persist the draft so a session expiry → login → redirect resumes here.
   useEffect(() => {
     const sub = form.watch((values) => {
       try {
-        sessionStorage.setItem(draftKey(uid), JSON.stringify({ ...values, walletId }))
+        sessionStorage.setItem(draftKey(uid), JSON.stringify({ ...values, walletId, walletKind }))
       } catch {
-        /* ignore */
       }
     })
     return () => sub.unsubscribe()
-  }, [form, uid, walletId])
+  }, [form, uid, walletId, walletKind])
 
-  // Changing wallet or network invalidates the connection.
   useEffect(() => {
     if (connection && (connection.walletId !== walletId || connection.network !== network)) {
       void api.wallets.disconnect(connection.connectionId).catch(() => undefined)
@@ -145,7 +165,6 @@ export function CheckoutPage() {
     setConnection(null)
   }
 
-  // Live quote changed after review → must re-accept.
   const live = quote.data
   const newer = conflict ?? (step === 'review' && reviewed && live && live.fingerprint !== reviewed.fingerprint ? live : null)
   const reviewedHasIssues = (reviewed?.issues.length ?? 0) > 0
@@ -153,6 +172,14 @@ export function CheckoutPage() {
   const toReview = form.handleSubmit(
     () => {
       setFormError(null)
+      if (guest) {
+        try {
+          sessionStorage.setItem(draftKey(GUEST), JSON.stringify({ ...form.getValues(), walletKind }))
+        } catch {
+        }
+        void navigate({ to: '/login', search: { redirect: '/checkout' } })
+        return
+      }
       if (!live) return
       if (live.issues.length > 0) {
         setFormError('Alguns itens não estão mais disponíveis. Ajuste o carrinho para continuar.')
@@ -192,7 +219,6 @@ export function CheckoutPage() {
     place.submit(body)
   }
 
-  // React to order errors.
   const err = place.error
   useEffect(() => {
     if (!err) return
@@ -219,7 +245,7 @@ export function CheckoutPage() {
   const busy = place.isPending
   const canConfirm = step === 'review' && !!reviewed && !reviewedHasIssues && !newer && !!connection && !busy && !pending.order
 
-  if (cart.isPending || profile.isPending || walletsQuery.isPending) {
+  if (cart.isPending || (!guest && (profile.isPending || walletsQuery.isPending))) {
     return (
       <div className="container-page py-8" aria-busy="true" aria-label="Carregando pagamento">
         <Skeleton className="h-5 w-64" />
@@ -234,7 +260,7 @@ export function CheckoutPage() {
       </div>
     )
   }
-  if (cart.isError || profile.isError || walletsQuery.isError) {
+  if (cart.isError || (!guest && (profile.isError || walletsQuery.isError))) {
     return (
       <div className="container-page py-8">
         <ErrorState
@@ -389,7 +415,7 @@ export function CheckoutPage() {
             )}
             <p className="mt-3 text-center text-[15px] text-cream">
               Tem um código promocional?{' '}
-              <Link to="/cart" className="text-brand-accent hover:underline">
+              <Link to="/cart" className="text-brand-accent underline underline-offset-2 hover:no-underline">
                 Aplique aqui
               </Link>
             </p>
@@ -408,6 +434,9 @@ export function CheckoutPage() {
 
           <div>
             <h2 className="mb-3 text-center text-base font-bold text-cream">Carteira e rede</h2>
+            {guest ? (
+              <GuestWalletOptions value={walletKind} onChange={setWalletKind} />
+            ) : (
             <WalletPicker
               wallets={wallets}
               selectedId={walletId}
@@ -419,6 +448,7 @@ export function CheckoutPage() {
               onConnect={() => connect.mutate()}
               onDisconnect={disconnect}
             />
+            )}
           </div>
 
           <OrderFeedback phase={place.phase} error={place.error} onRetry={confirm} />
@@ -430,14 +460,16 @@ export function CheckoutPage() {
           )}
 
           {step === 'form' ? (
+            <>
             <button
               type="submit"
               form="checkout-form"
               disabled={busy || !!pending.order}
               className="h-[45px] w-full rounded-sm bg-brand text-base font-bold text-ink hover:bg-brand-accent disabled:opacity-50"
             >
-              Revisar pedido
+              {guest ? 'Confirmar compra' : 'Revisar pedido'}
             </button>
+            </>
           ) : (
             <>
               {!connection && step === 'review' && (
@@ -496,6 +528,32 @@ function OrderFeedback({
   return (
     <div role="status" aria-live="polite" data-testid="order-feedback">
       {content}
+    </div>
+  )
+}
+
+function GuestWalletOptions({ value, onChange }: { value: WalletKind | null; onChange: (k: WalletKind) => void }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex min-h-[45px] flex-wrap items-center gap-3 rounded-sm border border-dashed border-line px-4 py-2">
+        <span className="text-xs text-tan">Compatíveis:</span>
+        <WalletChip />
+      </div>
+      <RadioGroup aria-label="Tipo de carteira preferido" value={value ?? ''} onValueChange={(v) => onChange(v as WalletKind)} className="gap-3">
+        {WALLET_KINDS.map((kind) => (
+          <label
+            key={kind}
+            htmlFor={`guest-wallet-${kind}`}
+            className={cn(
+              'flex min-h-[45px] cursor-pointer items-center gap-3 rounded-sm border px-4 py-2 text-[15px] text-cream',
+              value === kind ? 'border-cream' : 'border-line',
+            )}
+          >
+            <RadioGroupItem id={`guest-wallet-${kind}`} value={kind} />
+            {WALLET_LABEL[kind]}
+          </label>
+        ))}
+      </RadioGroup>
     </div>
   )
 }

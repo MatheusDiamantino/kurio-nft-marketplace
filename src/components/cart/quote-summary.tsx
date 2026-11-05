@@ -3,10 +3,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatEth } from '@/lib/eth'
 import { cn } from '@/lib/utils'
 
-/**
- * Subtotal / discount / network fee / total exactly as returned by the quote
- * API (no client-side arithmetic). Shared by the cart and checkout.
- */
 export function QuoteSummary({
   quote,
   loading,
@@ -57,14 +53,12 @@ export function QuoteSummary({
             (-) {hasDiscount ? formatEth(quote.discount) : '00.00'}
           </dd>
         </div>
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-between gap-4">
-            <dt>Taxa de rede</dt>
-            <dd data-testid="summary-fee" className="text-lg tabular-nums">
-              {formatEth(quote.networkFee)}
-            </dd>
-          </div>
-          <p className={cn('text-xs text-brand', feeAlign === 'right' ? 'text-right' : 'text-center')}>Taxa estimada</p>
+        <div className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1">
+          <dt>Taxa de rede</dt>
+          <dd data-testid="summary-fee" className="text-lg tabular-nums">
+            {formatEth(quote.networkFee)}
+          </dd>
+          <dd className={cn('col-span-2 text-xs text-brand', feeAlign === 'right' ? 'text-right' : 'text-center')}>Taxa estimada</dd>
         </div>
       </dl>
       <div className="mt-6 flex items-center justify-between gap-4 border-t border-line pt-4">

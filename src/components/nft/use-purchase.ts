@@ -5,11 +5,6 @@ import { useUser } from '@/auth/use-session'
 import { useAddToCart } from '@/queries/cart'
 import { useIsFavorite, useToggleFavorite } from '@/queries/favorites'
 
-/**
- * Purchase state for the detail page (shared by desktop and mobile layouts).
- * Quantity is always clamped to min(edition.available, maxPerOrder); when a
- * realtime update lowers availability, the clamp is announced via `notice`.
- */
 export function usePurchase(nft: NftDetail) {
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
@@ -27,7 +22,6 @@ export function usePurchase(nft: NftDetail) {
   const max = Math.max(0, Math.min(available, nft.maxPerOrder))
   const quantity = max === 0 ? 1 : Math.min(Math.max(1, rawQty), max)
 
-  // Announce availability changes that affect the current selection (realtime).
   const [prevMax, setPrevMax] = useState(max)
   const [notice, setNotice] = useState('')
   if (max !== prevMax) {

@@ -13,7 +13,6 @@ import { applyServerErrors } from '@/lib/form-errors'
 import { cn } from '@/lib/utils'
 import { PasswordInput, TextInput } from '@/components/account/form-controls'
 
-/** Variant: 'modal' (desktop dialog, compact) or 'page' (mobile full screen, rounded/large). */
 export type AuthVariant = 'modal' | 'page'
 
 const fieldInput = (variant: AuthVariant) =>
@@ -64,17 +63,13 @@ export function SocialLogin({ variant }: { variant: AuthVariant }) {
           Continuar com Google
         </button>
         <button type="button" className={btn} onClick={notify}>
-          <FacebookIcon width={20} height={20} style={{ color: '#1877F2' }} />
+          <FacebookIcon width={20} height={20} className="text-facebook" />
           Continuar com Facebook
         </button>
       </div>
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-// Login
-// ---------------------------------------------------------------------------
 
 const loginSchema = z.object({
   email: z.string().trim().min(1, 'Informe seu e-mail.').email('Informe um e-mail válido.'),
@@ -87,7 +82,7 @@ export function LoginForm({ variant, onSuccess }: { variant: AuthVariant; onSucc
   const [formError, setFormError] = useState<string | null>(null)
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
-    // Demo account pre-filled to speed up evaluation (fictional credentials, see README).
+    
     defaultValues: { email: 'ana@kurio.dev', password: 'Kurio@123' },
   })
   const { errors } = form.formState
@@ -149,10 +144,6 @@ export function LoginForm({ variant, onSuccess }: { variant: AuthVariant; onSucc
     </form>
   )
 }
-
-// ---------------------------------------------------------------------------
-// Register
-// ---------------------------------------------------------------------------
 
 const registerSchema = z
   .object({

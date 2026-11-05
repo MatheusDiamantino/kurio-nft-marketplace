@@ -1,11 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
 
-/**
- * E2E + visual regression. Runs against the optimized build served by
- * `vite preview` with the MSW mock layer enabled (same as the deployed demo).
- * Every test starts from an isolated browser context and resets the mock
- * server through `/?mock-reset=1` (see tests/fixtures.ts).
- */
 const PORT = 4173
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`
 

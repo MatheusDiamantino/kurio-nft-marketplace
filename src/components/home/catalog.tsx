@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { Link } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, Settings2, X } from 'lucide-react'
 import { TABS, type CatalogResponse, type CatalogSort, type CatalogTab } from '@/api/contracts'
 import { NftCard, NftCardSkeleton } from '@/components/nft-card'
 import { EmptyState, ErrorState } from '@/components/shared'
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useCatalog } from '@/queries/catalog'
 import { PAGE_SIZE, toCatalogQuery } from '@/routes/search'
+import { useDragScroll } from '@/lib/use-drag-scroll'
 import { cn } from '@/lib/utils'
 import { CatalogFilters } from './filters'
 import { useHomeSearch } from './use-home-search'
@@ -32,13 +33,6 @@ function scrollToCatalogTop() {
   el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
 }
 
-/**
- * Text search bound to `?q=`. Debounced (300 ms) while typing: the first URL
- * update of a typing session pushes a history entry, the following ones
- * replace it (so Back returns to the pre-search results, not keystroke by
- * keystroke). Enter commits immediately. Re-syncs when the URL changes externally
- * (back/forward, "Limpar filtros").
- */
 export function CatalogSearch({ id, placeholder, className, inputClassName }: { id: string; placeholder: string; className?: string; inputClassName?: string }) {
   const { search, update } = useHomeSearch()
   const urlQ = search.q ?? ''
@@ -58,7 +52,6 @@ export function CatalogSearch({ id, placeholder, className, inputClassName }: { 
       typingSession.current = true
     }, 300)
     return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text])
 
   const submit = (e: FormEvent) => {
@@ -96,6 +89,7 @@ export function CatalogSearch({ id, placeholder, className, inputClassName }: { 
 
 function CatalogTabs({ tab, onChange }: { tab: CatalogTab; onChange: (t: CatalogTab) => void }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([])
+  const dragRef = useDragScroll<HTMLDivElement>()
   const onKey = (e: KeyboardEvent, i: number) => {
     const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
     if (!dir) return
@@ -105,7 +99,7 @@ function CatalogTabs({ tab, onChange }: { tab: CatalogTab; onChange: (t: Catalog
     onChange(TABS[next])
   }
   return (
-    <div role="tablist" aria-label="Exibir" className="scrollbar-none flex gap-4 overflow-x-auto md:gap-3">
+    <div ref={dragRef} role="tablist" aria-label="Exibir" className="scrollbar-none flex min-w-0 justify-between gap-2 overflow-x-auto min-[380px]:gap-3 md:justify-start md:gap-6">
       {TABS.map((t, i) => {
         const active = t === tab
         return (
@@ -123,7 +117,7 @@ function CatalogTabs({ tab, onChange }: { tab: CatalogTab; onChange: (t: Catalog
             onClick={() => onChange(t)}
             onKeyDown={(e) => onKey(e, i)}
             className={cn(
-              'shrink-0 border-b-2 pb-1 text-[15px] whitespace-nowrap transition-colors hover:text-brand-accent md:text-sm',
+              'shrink-0 border-b-2 pb-1 text-sm whitespace-nowrap transition-colors hover:text-brand-accent md:text-sm',
               active ? 'border-brand font-bold text-brand' : 'border-transparent text-cream',
             )}
           >
@@ -167,7 +161,7 @@ function Pagination({ page, totalPages, onChange }: { page: number; totalPages: 
   const pages = Array.from({ length: Math.min(windowSize, totalPages) }, (_, i) => start + i)
   const btn = 'grid size-[26px] place-items-center rounded-[3px] border border-line-soft text-sm text-cream hover:border-brand hover:text-brand-accent disabled:opacity-40 disabled:hover:border-line-soft'
   return (
-    <nav aria-label="Paginação do catálogo" className="mt-16 flex justify-end">
+    <nav aria-label="Paginação do catálogo" className="mt-12 flex justify-center md:mt-16 md:justify-end">
       <ul className="flex items-center gap-2">
         {page > 1 && (
           <li>
@@ -206,7 +200,7 @@ function FeaturedBanner() {
         <h2 id="featured-title" className="text-[22px] leading-8 font-bold tracking-[0.03em] text-brand">
           NFT EM DESTAQUE
         </h2>
-        <p className="text-center text-base font-bold tracking-[0.04em] text-cream">OFERTA LIMITADA</p>
+        <p className="text-center text-[22px] font-bold tracking-[0.04em] text-cream">OFERTA LIMITADA</p>
       </div>
       <Link to="/nft/$nftId" params={{ nftId: 'sage-nomad-009' }} className="group block overflow-hidden rounded-[18px]">
         <img
@@ -235,10 +229,10 @@ function MobileFilters({ data, loading, total }: { data: CatalogResponse | undef
       <SheetTrigger asChild>
         <button
           type="button"
-          className="relative grid size-[45px] shrink-0 place-items-center rounded-[12px] bg-brand text-ink hover:bg-brand-accent"
+          className="relative grid size-[45px] shrink-0 place-items-center rounded-[12px] bg-gradient-to-br from-brand to-brand-strong text-ink shadow-md hover:from-brand-accent hover:to-brand"
           aria-label={count ? `Filtros e ordenação (${count} ativos)` : 'Filtros e ordenação'}
         >
-          <SlidersHorizontal className="size-5" aria-hidden />
+          <Settings2 className="size-5" strokeWidth={2.25} aria-hidden />
           {count > 0 && (
             <span aria-hidden className="absolute -top-1 -right-1 grid size-5 place-items-center rounded-full bg-cream text-[10px] font-bold text-ink">
               {count}
@@ -275,7 +269,6 @@ function MobileFilters({ data, loading, total }: { data: CatalogResponse | undef
   )
 }
 
-/** Mobile top bar (Figma "Search Bar"): search input + filter sheet trigger. */
 export function MobileSearchBar() {
   const { search } = useHomeSearch()
   const { data, isFetching } = useCatalog(toCatalogQuery(search))
@@ -292,13 +285,27 @@ export function MobileSearchBar() {
   )
 }
 
+function useDelayedFlag(flag: boolean, delayMs = 300) {
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    if (!flag) {
+      setShown(false)
+      return
+    }
+    const t = setTimeout(() => setShown(true), delayMs)
+    return () => clearTimeout(t)
+  }, [flag, delayMs])
+  return shown
+}
+
 export function Catalog() {
   const { search, update, setPage, clear } = useHomeSearch()
   const query = toCatalogQuery(search)
   const { data, isPending, isError, isFetching, isPlaceholderData, refetch, error } = useCatalog(query)
   const tab = search.tab ?? 'all'
   const page = query.page ?? 1
-  const updating = isFetching && !isPending
+  const updating = useDelayedFlag(isFetching && !isPending)
+  const dimmed = useDelayedFlag(isPlaceholderData)
   const hasFilters = activeFilterCount(search) > 0 || !!search.q || !!search.tab
 
   const goToPage = (p: number) => {
@@ -306,7 +313,6 @@ export function Catalog() {
     scrollToCatalogTop()
   }
 
-  const countText = data ? `${data.total} ${data.total === 1 ? 'resultado' : 'resultados'}` : 'Carregando resultados…'
 
   return (
     <section id="catalogo" tabIndex={-1} aria-labelledby="catalog-title" className="container-page mt-8 scroll-mt-6 outline-none md:mt-24">
@@ -316,29 +322,18 @@ export function Catalog() {
       <div className="flex gap-12">
         <div className="hidden w-[310px] shrink-0 flex-col gap-6 lg:flex">
           <div className="bg-surface px-4 py-6">
-            <CatalogFilters data={data} loading={isFetching} />
+            <CatalogFilters data={data} loading={updating} />
           </div>
           <FeaturedBanner />
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="mb-6 hidden items-center justify-between gap-4 md:flex">
-            <CatalogSearch id="catalog-search" placeholder="Buscar por nome, coleção ou token" className="w-full max-w-sm" />
-            <p data-testid="catalog-count" role="status" aria-live="polite" className="shrink-0 text-sm text-sand">
-              {countText}
-              {updating && <span className="ml-2 text-brand">· Atualizando…</span>}
-            </p>
-          </div>
-
+          
           <div className="flex items-center justify-between gap-4">
             <CatalogTabs tab={tab} onChange={(t) => void update({ tab: t === 'all' ? undefined : t })} />
             <SortSelect value={search.sort ?? 'recent'} onChange={(s) => void update({ sort: s === 'recent' ? undefined : s })} className="hidden md:flex" />
           </div>
-          <p role="status" aria-live="polite" className="mt-3 text-xs text-sand md:hidden" data-testid="catalog-count-mobile">
-            {countText}
-            {updating && <span className="ml-2 text-brand">· Atualizando…</span>}
-          </p>
-
+          
           <div id="catalog-panel" role="tabpanel" aria-labelledby={`catalog-tab-${tab}`} aria-busy={isFetching} className="mt-6 md:mt-8">
             {isError && !data ? (
               <ErrorState
@@ -380,12 +375,16 @@ export function Catalog() {
                 <ul
                   data-testid="catalog-grid"
                   className={cn(
-                    'grid grid-cols-2 gap-x-4 gap-y-10 transition-opacity md:gap-x-8 lg:grid-cols-3 lg:gap-y-[72px] [&>li:nth-child(even)]:mt-8 md:[&>li:nth-child(even)]:mt-0',
-                    isPlaceholderData && 'opacity-60',
+                    'grid grid-cols-2 gap-x-4 gap-y-10 transition-opacity duration-300 md:gap-x-8 lg:grid-cols-3 lg:gap-y-[72px] [&>li:nth-child(even)]:mt-8 md:[&>li:nth-child(even)]:mt-0',
+                    dimmed && 'opacity-60',
                   )}
                 >
                   {data?.items.map((nft, i) => (
-                    <li key={nft.id}>
+                    <li
+                      key={nft.id}
+                      className="animate-in fade-in-0 slide-in-from-bottom-1 fill-mode-both duration-300 ease-out"
+                      style={{ animationDelay: `${i * 30}ms` }}
+                    >
                       <NftCard nft={nft} priority={i < 3} />
                     </li>
                   ))}

@@ -1,11 +1,3 @@
-/**
- * Mock scenario & network-condition configuration.
- *
- * Selection order (first wins): URL query (?scenario=…&latency=…) →
- * localStorage → defaults. Values chosen via the URL are persisted so they
- * survive navigation and refresh. `?mock-reset=1` restores the seed data.
- */
-
 export const SCENARIOS = {
   default: 'Fluxo feliz com dados de seed',
   'catalog-empty': 'Catálogo sempre vazio',
@@ -38,7 +30,7 @@ export type LatencyId = keyof typeof LATENCIES
 export interface MockConfig {
   scenario: ScenarioId
   latency: LatencyId
-  /** Delay in ms before a pending order resolves (confirmed/declined). */
+
   orderResolutionMs: number
 }
 
@@ -86,7 +78,6 @@ function persist() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
   } catch {
-    /* storage unavailable — keep in memory */
   }
 }
 
@@ -114,7 +105,6 @@ export function isScenarioActive(id: ScenarioId) {
   return config.scenario === id
 }
 
-/** Per-key request counters (used by "first attempt fails" scenarios). */
 const counters = new Map<string, number>()
 export function nextCount(key: string): number {
   const n = (counters.get(key) ?? 0) + 1
@@ -124,11 +114,9 @@ export function nextCount(key: string): number {
 
 let requestSeq = 0
 
-/** Deterministic latency for the current request. */
 export function latencyFor(kind: 'catalog' | 'default'): number {
   requestSeq += 1
   if (config.scenario === 'out-of-order' && kind === 'catalog') {
-    // Alternate slow/fast so that an earlier request resolves after a later one.
     return requestSeq % 2 === 1 ? 1800 : 250
   }
   switch (config.latency) {

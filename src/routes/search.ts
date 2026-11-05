@@ -11,11 +11,6 @@ import {
 } from '@/api/contracts'
 import { isValidEth } from '@/lib/eth'
 
-/**
- * URL search-param schemas. Everything the catalog shows (search, filters,
- * sort, tab, page) lives in the URL so it survives refresh and back/forward.
- * Validation is defensive: unknown/invalid values are dropped, never thrown.
- */
 export interface HomeSearch {
   q?: string
   collection?: CollectionSlug[]
@@ -79,7 +74,6 @@ export interface RedirectSearch {
   redirect?: string
 }
 
-/** Only same-origin relative paths are accepted as post-login targets. */
 export function validateRedirectSearch(search: Record<string, unknown>): RedirectSearch {
   const r = search.redirect
   return typeof r === 'string' && r.startsWith('/') && !r.startsWith('//') ? { redirect: r } : {}

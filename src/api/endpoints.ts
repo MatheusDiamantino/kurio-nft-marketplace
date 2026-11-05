@@ -28,7 +28,6 @@ import { guestCart, sessionStore } from '@/auth/session-store'
 
 type Opts = { signal?: AbortSignal }
 
-/** Serialise catalog params exactly as the API expects (repeatable keys for lists). */
 export function catalogSearchParams(q: CatalogQuery) {
   const p = new URLSearchParams()
   if (q.q) p.set('q', q.q)
@@ -43,7 +42,6 @@ export function catalogSearchParams(q: CatalogQuery) {
   return p
 }
 
-/** Remember the guest cart id the server assigned (only while anonymous). */
 function trackCart(cart: Cart) {
   if (!sessionStore.get() && cart.ownerId === null) guestCart.set(cart.id)
   return cart

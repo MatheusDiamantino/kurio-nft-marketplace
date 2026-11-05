@@ -19,7 +19,7 @@ export function CartPage() {
   return (
     <>
       <div className="container-page pt-4 md:pt-8">
-        {/* Mobile header per Figma: back button + centered title */}
+        
         <div className="relative mb-4 flex h-11 items-center justify-center md:hidden">
           <Link
             to="/"

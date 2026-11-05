@@ -1,20 +1,21 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Cart, EditionId, Network } from '@/api/contracts'
 import { api } from '@/api/endpoints'
 import { useCartOwner } from '@/auth/use-session'
 import { keys } from './keys'
 
-export function useCart() {
-  const owner = useCartOwner()
-  return useQuery({
+export const cartQuery = (owner: string) =>
+  queryOptions({
     queryKey: keys.cart.of(owner),
     queryFn: ({ signal }) => api.cart.get({ signal }),
     staleTime: 10_000,
   })
+
+export function useCart() {
+  return useQuery(cartQuery(useCartOwner()))
 }
 
-/** Writes the authoritative cart returned by a mutation and refreshes quotes. */
 function useCartWriter() {
   const qc = useQueryClient()
   const owner = useCartOwner()
@@ -38,10 +39,6 @@ export function useAddToCart() {
   })
 }
 
-/**
- * Quantity changes are optimistic: the line updates instantly and is rolled
- * back if the server refuses (e.g. availability dropped meanwhile).
- */
 export function useUpdateCartItem() {
   const qc = useQueryClient()
   const owner = useCartOwner()
@@ -108,7 +105,6 @@ export function useRemoveCoupon() {
   })
 }
 
-/** Server-side quote (subtotal, discount, fee, total) for the current cart version. */
 export function useQuote(network: Network, options: { enabled?: boolean } = {}) {
   const owner = useCartOwner()
   const { data: cart } = useCart()

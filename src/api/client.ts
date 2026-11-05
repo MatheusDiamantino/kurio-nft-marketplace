@@ -2,7 +2,6 @@ import axios, { AxiosError, type AxiosRequestConfig } from 'axios'
 import { API_BASE_URL, HEADERS, type ApiErrorBody, type ApiErrorCode } from './contracts'
 import { guestCart, sessionStore } from '@/auth/session-store'
 
-/** Normalised error for every REST failure (HTTP, network, timeout, abort). */
 export class ApiError extends Error {
   readonly status: number
   readonly code: ApiErrorCode
@@ -18,7 +17,6 @@ export class ApiError extends Error {
     this.details = params.details
   }
 
-  /** Failures where retrying the same request is safe and may succeed. */
   get isTransient() {
     return this.code === 'NETWORK_ERROR' || this.code === 'TIMEOUT' || this.status === 503 || this.status === 502 || this.status === 504 || this.status === 500
   }
@@ -51,8 +49,7 @@ http.interceptors.response.use(
   (error: unknown) => {
     if (axios.isCancel(error)) return Promise.reject(error)
     const apiError = toApiError(error)
-    // A request made *with* a token that comes back 401 means the session is
-    // gone: drop it everywhere (cache, sockets) — the app layer reacts.
+
     const hadToken = error instanceof AxiosError && !!error.config?.headers?.Authorization
     if (apiError.isAuthError && hadToken) sessionStore.expire(apiError.code)
     return Promise.reject(apiError)

@@ -1,15 +1,3 @@
-#!/usr/bin/env node
-/**
- * Lighthouse audit — Home and NFT detail, mobile + desktop, 3 runs each.
- *
- * Usage:  pnpm build && pnpm lighthouse
- *   (serves dist/ with `vite preview` on :4173 unless LH_BASE_URL is set)
- *
- * Output (versioned):
- *   lighthouse/summary.md / summary.json  — medians per category + LCP/CLS/TBT, environment
- *   lighthouse/reports/<page>-<profile>.report.{html,json} — the median run of each page/profile
- * Raw runs go to lighthouse/runs/ (git-ignored).
- */
 import { spawn } from 'node:child_process'
 import { mkdir, writeFile, rm } from 'node:fs/promises'
 import os from 'node:os'
@@ -37,7 +25,6 @@ async function waitFor(url, timeoutMs = 60_000) {
       const r = await fetch(url)
       if (r.ok) return
     } catch {
-      /* not up yet */
     }
     await new Promise((r) => setTimeout(r, 500))
   }
@@ -62,7 +49,6 @@ async function main() {
     for (const profile of config.profiles) {
       const runs = []
       for (let i = 1; i <= config.runs; i++) {
-        // Fresh Chrome per run = cold cache, cold service worker (worst case).
         const chrome = await chromeLauncher.launch({ chromePath, chromeFlags: config.chromeFlags })
         try {
           const lhConfig = profile === 'desktop' ? desktopConfig : undefined
@@ -89,7 +75,7 @@ async function main() {
         scores: Object.fromEntries(config.categories.map((c) => [c, median(runs.map((r) => r.scores[c]))])),
         metrics: Object.fromEntries(['LCP', 'CLS', 'TBT', 'FCP'].map((m) => [m, median(runs.map((r) => r.metrics[m]))])),
       }
-      // Keep the run whose performance score is the median as the representative report.
+
       const medianRun = [...runs].sort((a, b) => a.scores.performance - b.scores.performance)[Math.floor(runs.length / 2)]
       await writeFile(path.join(outDir, 'reports', `${page.name}-${profile}.report.html`), medianRun.html)
       await writeFile(path.join(outDir, 'reports', `${page.name}-${profile}.report.json`), medianRun.json)

@@ -1,6 +1,5 @@
 import { expect, isMobile, test, USERS } from './fixtures'
 
-/** 3. Cadastro, login, expiração de sessão, logout e troca de usuário. */
 test.describe('conta e sessão', () => {
   test('cadastro valida campos, trata conflito e cria a conta', async ({ app, page }) => {
     await app.open('/register')
@@ -13,7 +12,7 @@ test.describe('conta e sessão', () => {
     await page.getByLabel(/^Senha/).first().fill('Segura123')
     await page.getByLabel(/^Confirmar senha/).fill('Segura123')
     await submit.click()
-    // Conflito vindo da API, associado ao campo de e-mail.
+
     await expect(page.getByText(/já está cadastrado/)).toBeVisible()
     await expect(page.getByLabel(/^E-mail/).first()).toHaveAttribute('aria-invalid', 'true')
 

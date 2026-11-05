@@ -1,15 +1,26 @@
+import type { Page } from '@playwright/test'
 import { expect, isMobile, test } from './fixtures'
 
-/** 1. Busca, filtros combinados, ordenação, paginação e restauração pelo histórico. */
+async function search(page: Page, term: string) {
+  if (isMobile(page)) {
+    await page.locator('#mobile-search').fill(term)
+    return
+  }
+  await page.getByRole('button', { name: 'Abrir busca' }).click()
+  const input = page.getByRole('searchbox', { name: 'Buscar NFTs' })
+  await input.fill(term)
+  await input.press('Enter')
+}
+
+const cardNames = (page: Page) => page.getByTestId('catalog-grid').getByRole('heading', { level: 3 }).allTextContents()
+
 test.describe('catálogo', () => {
   test('filtros combinados, ordenação e paginação compõem a URL e sobrevivem a refresh e histórico', async ({ app, page }) => {
     test.skip(isMobile(page), 'filtros desktop (mobile coberto em teste próprio)')
     await app.open('/')
     const grid = page.getByTestId('catalog-grid')
     await expect(grid.getByTestId('nft-card')).toHaveCount(9)
-    await expect(page.getByTestId('catalog-count')).toContainText('60')
 
-    // Página 2 → depois um filtro deve reiniciar a paginação.
     await page.getByRole('button', { name: 'Página 2' }).click()
     await expect(page).toHaveURL(/page=2/)
 
@@ -24,20 +35,17 @@ test.describe('catálogo', () => {
     await page.getByRole('option', { name: 'Menor preço' }).click()
     await expect(page).toHaveURL(/sort=price-asc/)
 
-    // Os resultados refletem os parâmetros: todos Música + Ethereum, em ordem crescente de preço.
     const prices = await grid.getByTestId('nft-card').evaluateAll((cards) =>
       cards.map((c) => Number(c.textContent!.match(/(\d+\.\d+) ETH/)![1])),
     )
     expect(prices.length).toBeGreaterThan(0)
     expect([...prices].sort((a, b) => a - b)).toEqual(prices)
-    const filteredCount = await page.getByTestId('catalog-count').textContent()
+    const filtered = await cardNames(page)
 
-    // Refresh mantém o estado.
     await app.reload()
     await expect(page.getByRole('button', { name: /^Música/ })).toHaveAttribute('aria-pressed', 'true')
-    await expect(page.getByTestId('catalog-count')).toHaveText(filteredCount!)
+    await expect.poll(() => cardNames(page)).toEqual(filtered)
 
-    // Voltar no histórico desfaz a ordenação; avançar refaz.
     await page.goBack()
     await expect(page).not.toHaveURL(/sort=price-asc/)
     await page.goForward()
@@ -46,15 +54,15 @@ test.describe('catálogo', () => {
 
   test('busca por texto atualiza a URL e o resultado; voltar restaura a lista completa', async ({ app, page }) => {
     await app.open('/')
-    const input = isMobile(page) ? page.locator('#mobile-search') : page.locator('#catalog-search')
-    await input.fill('golden')
+    await search(page, 'golden')
     await expect(page).toHaveURL(/q=golden/)
     const cards = page.getByTestId('catalog-grid').getByTestId('nft-card')
     await expect(cards.first()).toContainText(/Golden/i)
     for (const text of await cards.allTextContents()) expect(text.toLowerCase()).toContain('golden')
     await page.goBack()
     await expect(page).not.toHaveURL(/q=golden/)
-    await expect(input).toHaveValue('')
+    await expect(page.getByTestId('catalog-grid').getByTestId('nft-card')).toHaveCount(9)
+    if (isMobile(page)) await expect(page.locator('#mobile-search')).toHaveValue('')
   })
 
   test('filtros no mobile ficam num drawer com foco controlado', async ({ app, page }) => {
@@ -80,24 +88,22 @@ test.describe('catálogo', () => {
 
   test('respostas fora de ordem não sobrescrevem o resultado atual', async ({ app, page }) => {
     await app.open('/', { scenario: 'out-of-order' })
-    const input = isMobile(page) ? page.locator('#mobile-search') : page.locator('#catalog-search')
-    // 1ª requisição (lenta) = "ivory"; 2ª (rápida) = "golden". A lenta chega depois e deve ser descartada.
-    await input.fill('ivory')
+    
+    await search(page, 'ivory')
     await expect(page).toHaveURL(/q=ivory/)
-    await input.fill('golden')
+    await search(page, 'golden')
     await expect(page).toHaveURL(/q=golden/)
     const cards = page.getByTestId('catalog-grid').getByTestId('nft-card')
     await expect(cards.first()).toContainText(/Golden/i, { timeout: 10_000 })
-    await page.waitForTimeout(2200) // tempo da resposta lenta chegar
+    await page.waitForTimeout(2200) 
     for (const text of await cards.allTextContents()) expect(text.toLowerCase()).toContain('golden')
   })
 })
 
-/** 12. Skeletons durante carregamento lento, feedback de falha e recuperação após nova tentativa. */
 test.describe('carregamento e falhas', () => {
   test('skeletons com carregamento lento, erro e recuperação ao tentar novamente', async ({ app, page }) => {
     await app.open('/', { latency: 'slow', scenario: 'catalog-error' })
-    // Skeletons (shimmer) preservam o grid enquanto a primeira resposta não chega.
+    
     await expect(page.locator('[data-slot="skeleton"]').first()).toBeVisible()
     await expect(page.getByRole('button', { name: 'Tentar novamente' })).toBeVisible({ timeout: 20_000 })
     await expect(page.getByRole('alert').filter({ hasText: /catálogo|carregar/i }).first()).toBeVisible()

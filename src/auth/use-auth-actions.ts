@@ -4,11 +4,6 @@ import { api } from '@/api/endpoints'
 import { keys } from '@/queries/keys'
 import { guestCart, sessionStore } from './session-store'
 
-/**
- * Login/register send the guest cart id so the server merges the visitor's
- * items into the user's cart. On success the guest cart cache is dropped and
- * the user's (merged) cart is fetched under the user's own key.
- */
 export function useLogin() {
   const qc = useQueryClient()
   return useMutation({
@@ -36,7 +31,6 @@ export function useRegister() {
 export function useLogout() {
   return useMutation({
     mutationFn: async () => {
-      // Revoke server-side, but never block local logout on network failures.
       await api.auth.logout().catch(() => undefined)
     },
     onSettled: () => sessionStore.end('logout'),

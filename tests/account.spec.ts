@@ -5,7 +5,6 @@ const PNG_1PX = Buffer.from(
   'base64',
 )
 
-/** 8. Edição de perfil, avatar, senha e carteiras, com erros de validação. */
 test.describe('perfil e carteiras', () => {
   test.beforeEach(async ({ app }) => {
     await app.open('/')
@@ -22,7 +21,6 @@ test.describe('perfil e carteiras', () => {
     await expect(page.getByLabel(/^E-mail/).first()).toHaveAttribute('aria-invalid', 'true')
     await expect(page.getByLabel(/^E-mail/).first()).toBeFocused()
 
-    // Conflito: e-mail de outro usuário (409 da API mapeado para o campo).
     await page.getByLabel(/^E-mail/).first().fill('bruno@kurio.dev')
     await page.getByRole('button', { name: 'Salvar', exact: true }).click()
     await expect(page.getByText('Este e-mail já está em uso.')).toBeVisible()

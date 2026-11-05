@@ -3,6 +3,7 @@ import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { ChartLine, Download, Heart, LogOut, MapPin, ShoppingCart, TriangleAlert, UserRound } from 'lucide-react'
 import { useLogout } from '@/auth/use-auth-actions'
 import { notifySoon } from '@/components/soon'
+import { useDragScroll } from '@/lib/use-drag-scroll'
 import { cn } from '@/lib/utils'
 
 type Icon = ComponentType<SVGProps<SVGSVGElement>>
@@ -24,13 +25,14 @@ const itemClass =
 export function AccountLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const logout = useLogout()
+  const dragRef = useDragScroll<HTMLUListElement>()
 
   return (
     <div className="container-page grid gap-6 py-6 md:grid-cols-[250px_1fr] md:gap-7 md:py-8 lg:grid-cols-[310px_1fr]">
       <aside className="min-w-0 self-start bg-surface">
         <h2 className="hidden px-2.5 pt-4 pb-2 text-lg font-bold text-cream md:block">Meu perfil</h2>
         <nav aria-label="Minha conta">
-          <ul className="scrollbar-none flex overflow-x-auto md:flex-col md:overflow-visible">
+          <ul ref={dragRef} className="scrollbar-none flex overflow-x-auto md:flex-col md:overflow-visible">
             {ITEMS.map((item) => {
               const Icon = item.icon
               if ('soon' in item) {

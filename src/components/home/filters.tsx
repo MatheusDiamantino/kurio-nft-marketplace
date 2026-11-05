@@ -1,6 +1,5 @@
 import { useId, useState } from 'react'
 import { Slider as SliderPrimitive } from 'radix-ui'
-import { Check } from 'lucide-react'
 import type { CatalogResponse } from '@/api/contracts'
 import { cn } from '@/lib/utils'
 import { toggleIn, useHomeSearch } from './use-home-search'
@@ -41,15 +40,10 @@ function FacetList<T extends string>({
                 )}
               >
                 <span className="flex items-center gap-2">
-                  <span
-                    aria-hidden
-                    className={cn('grid size-3.5 place-items-center rounded-[3px] border', active ? 'border-brand bg-brand text-ink' : 'border-line-soft')}
-                  >
-                    {active && <Check className="size-3" strokeWidth={3} />}
-                  </span>
+                  
                   {item.label}
                 </span>
-                <span className={cn('tabular-nums', loading && 'opacity-50')}>
+                <span className={cn('tabular-nums transition-opacity duration-300', loading && 'opacity-50')}>
                   <span className="sr-only">, </span>({item.count})<span className="sr-only"> itens</span>
                 </span>
               </button>
@@ -67,8 +61,7 @@ function PriceRange({ min, max, bounds }: { min?: string; max?: string; bounds: 
   const lo = bounds.min
   const hi = Math.max(bounds.max, lo + 0.01)
   const initial = (): [number, number] => [min ? Number(min) : lo, max ? Number(max) : hi]
-  // The parent remounts this component (key) when the URL range changes,
-  // so back/forward and "Limpar filtros" re-sync the thumbs.
+  
   const [value, setValue] = useState<[number, number]>(initial)
 
   const apply = () => {
@@ -101,7 +94,7 @@ function PriceRange({ min, max, bounds }: { min?: string; max?: string; bounds: 
             key={label}
             aria-label={label}
             aria-valuetext={`${fmt(value[i])} ETH`}
-            className="block size-4 rounded-full border-2 border-brand bg-[#c27a3c] shadow focus-visible:ring-4 focus-visible:ring-brand-accent/50 focus-visible:outline-none"
+            className="block size-4 rounded-full border-2 border-brand bg-brand-strong shadow focus-visible:ring-4 focus-visible:ring-brand-accent/50 focus-visible:outline-none"
           />
         ))}
       </SliderPrimitive.Root>
@@ -119,7 +112,6 @@ function PriceRange({ min, max, bounds }: { min?: string; max?: string; bounds: 
   )
 }
 
-/** Shared by the desktop sidebar and the mobile filter sheet. */
 export function CatalogFilters({ data, loading }: { data: CatalogResponse | undefined; loading: boolean }) {
   const { search, update } = useHomeSearch()
   const facets = data?.facets

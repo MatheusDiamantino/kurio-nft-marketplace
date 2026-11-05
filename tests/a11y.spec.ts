@@ -1,6 +1,5 @@
 import { expect, isMobile, test } from './fixtures'
 
-/** 11. Navegação por teclado, foco de diálogos e validação de formulários. */
 test.describe('acessibilidade', () => {
   test('link "pular para o conteúdo" e foco visível via teclado', async ({ app, page }) => {
     await app.open('/')
@@ -10,7 +9,7 @@ test.describe('acessibilidade', () => {
     await expect(skip).toBeFocused()
     await page.keyboard.press('Enter')
     await expect(page.locator('#conteudo')).toBeFocused()
-    // O foco visível usa outline (não depende só de cor de fundo).
+    
     await page.keyboard.press('Tab')
     const outline = await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle)
     expect(outline).not.toBe('none')

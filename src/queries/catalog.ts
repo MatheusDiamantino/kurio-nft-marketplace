@@ -6,9 +6,7 @@ import { keys } from './keys'
 export const catalogQuery = (q: CatalogQuery) =>
   queryOptions({
     queryKey: keys.catalog.list(q),
-    // The AbortSignal cancels superseded requests (fast typing / filter clicks);
-    // because each param set has its own key, a late response can only land in
-    // its own cache entry and never overwrite the current results.
+
     queryFn: ({ signal }) => api.nfts.list(q, { signal }),
     placeholderData: keepPreviousData,
   })

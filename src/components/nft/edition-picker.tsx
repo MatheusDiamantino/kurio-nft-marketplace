@@ -1,9 +1,9 @@
 import { useId } from 'react'
-import { RadioGroup } from 'radix-ui'
+import { RadioGroup as RadioGroupPrimitive } from 'radix-ui'
 import type { Edition, EditionId } from '@/api/contracts'
+import { RadioGroup } from '@/components/ui/radio-group'
 import { cn } from '@/lib/utils'
 
-/** "Edição:" pills — a real radiogroup; sold-out editions are disabled and labelled. */
 export function EditionPicker({
   editions,
   value,
@@ -21,7 +21,7 @@ export function EditionPicker({
       <span id={labelId} className={cn('font-bold text-cream', size === 'lg' ? 'text-base' : 'text-sm')}>
         Edição:
       </span>
-      <RadioGroup.Root
+      <RadioGroup
         aria-labelledby={labelId}
         value={value ?? undefined}
         onValueChange={(v) => onChange(v as EditionId)}
@@ -32,7 +32,7 @@ export function EditionPicker({
         {editions.map((e) => {
           const soldOut = e.available === 0
           return (
-            <RadioGroup.Item
+            <RadioGroupPrimitive.Item
               key={e.id}
               value={e.id}
               disabled={soldOut}
@@ -47,10 +47,10 @@ export function EditionPicker({
               )}
             >
               {e.label}
-            </RadioGroup.Item>
+            </RadioGroupPrimitive.Item>
           )
         })}
-      </RadioGroup.Root>
+      </RadioGroup>
     </div>
   )
 }

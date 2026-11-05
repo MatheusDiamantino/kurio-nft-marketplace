@@ -14,12 +14,6 @@ interface ServerToClient {
 }
 type ClientToServer = Record<string, never>
 
-/**
- * One Socket.IO connection per session epoch. On login/logout/user switch the
- * previous socket is torn down (listeners removed, connection closed) before a
- * new one is opened with the new credentials, so events from a previous
- * session can never touch the next user's cache.
- */
 export class RealtimeClient {
   private socket: Socket<ServerToClient, ClientToServer> | null = null
   private epoch = -1
@@ -82,8 +76,7 @@ export class RealtimeClient {
 
   private connect(token: string | null, epoch: number) {
     this.setStatus('connecting')
-    // Note: engine.io-client captures globalThis.WebSocket when this module is
-    // imported — main.tsx therefore loads the app only after MSW has started.
+    
     const auth: RealtimeHandshakeAuth = { token }
     const socket: Socket<ServerToClient, ClientToServer> = io(REALTIME_URL, {
       transports: ['websocket'],
@@ -95,7 +88,6 @@ export class RealtimeClient {
     })
     this.socket = socket
 
-    // Guard: ignore anything delivered to a socket from an older session epoch.
     const current = () => this.socket === socket && sessionStore.snapshot().epoch === epoch
 
     socket.on('connect', () => {
@@ -106,7 +98,7 @@ export class RealtimeClient {
     })
     socket.on('disconnect', (reason) => {
       if (!current()) return
-      // 'io client disconnect' = we closed it on purpose; anything else will auto-reconnect.
+      
       this.setStatus(reason === 'io client disconnect' ? 'idle' : 'reconnecting')
     })
     socket.on('connect_error', () => {
@@ -121,11 +113,6 @@ export class RealtimeClient {
     })
   }
 
-  /**
-   * After a reconnection we may have missed events: refetch every *active*
-   * resource from REST (catalog pages on screen, NFT detail, cart, quote,
-   * pending orders). Inactive queries are just marked stale.
-   */
   reconcile() {
     void this.qc.invalidateQueries({ queryKey: keys.catalog.all, refetchType: 'active' })
     void this.qc.invalidateQueries({ queryKey: keys.cart.all, refetchType: 'active' })

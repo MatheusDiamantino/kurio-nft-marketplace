@@ -151,7 +151,6 @@ function MobileDetail({ nft, p }: { nft: NftDetail; p: Purchase }) {
         <MetaLines nft={nft} className="mt-4 flex flex-col gap-1 text-sm leading-8 text-tan" />
       </div>
 
-      {/* Sticky buy bar — sits above the global mobile tab bar (72px). */}
       <div className="sticky bottom-[72px] z-30 rounded-t-[24px] border-t border-line bg-ink/95 px-6 pt-4 pb-5 backdrop-blur">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -171,7 +170,7 @@ function MobileDetail({ nft, p }: { nft: NftDetail; p: Purchase }) {
             type="button"
             onClick={() => p.addToCart(true)}
             disabled={!!p.blockedReason || p.adding}
-            className="h-[56px] flex-1 rounded-full bg-gradient-to-r from-[#e0a46d] to-brand text-base font-bold text-ink hover:to-brand-accent disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-[56px] flex-1 rounded-full bg-gradient-to-r from-brand-soft to-brand text-base font-bold text-ink hover:to-brand-accent disabled:cursor-not-allowed disabled:opacity-50"
           >
             {p.adding ? 'Adicionando…' : p.blockedReason === 'Esgotado' ? 'Esgotado' : 'Comprar NFT'}
           </button>
@@ -247,6 +246,5 @@ export function NftDetailPage() {
     )
   }
 
-  // key: reset purchase state (edition/quantity) when navigating to another NFT.
   return <NftDetailView key={nft.id} nft={nft} />
 }

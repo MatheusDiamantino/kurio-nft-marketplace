@@ -3,12 +3,9 @@ import type { CollectionSlug } from '@/api/contracts'
 import { NftCard, NftCardSkeleton } from '@/components/nft-card'
 import { ErrorState } from '@/components/shared'
 import { useCatalog } from '@/queries/catalog'
+import { useDragScroll } from '@/lib/use-drag-scroll'
 import { cn } from '@/lib/utils'
 
-/**
- * "Mais desta coleção" / "Colecionadores também viram" rail.
- * Scroll-snap row (5 visible on desktop) with page dots, keyboard reachable.
- */
 export function RelatedCarousel({
   title,
   collection,
@@ -28,6 +25,7 @@ export function RelatedCarousel({
   })
   const items = (data?.items ?? []).filter((n) => !excludeIds.includes(n.id)).slice(0, 15)
   const trackRef = useRef<HTMLUListElement>(null)
+  const dragRef = useDragScroll<HTMLUListElement>()
   const [page, setPage] = useState(0)
   const pages = Math.max(1, Math.ceil(items.length / 5))
 
@@ -47,7 +45,10 @@ export function RelatedCarousel({
         <ErrorState className="mt-6" message="Não foi possível carregar sugestões." onRetry={() => void refetch()} retrying={isRefetching} />
       ) : (
         <ul
-          ref={trackRef}
+          ref={(el) => {
+            trackRef.current = el
+            return dragRef(el)
+          }}
           onScroll={(e) => {
             const el = e.currentTarget
             setPage(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)))

@@ -6,6 +6,7 @@ import { Footer } from './footer'
 import { Header } from './header'
 import { MobileTabBar, MobileTopBar } from './mobile-nav'
 import { RealtimeIndicator } from './realtime-indicator'
+import { RouteProgress } from './route-status'
 import { SessionEffects } from './session-effects'
 
 const MockPanel = lazy(() => import('@/mocks/mock-panel').then((m) => ({ default: m.MockPanel })))
@@ -19,6 +20,7 @@ export function RootLayout() {
       >
         Pular para o conteúdo
       </a>
+      <RouteProgress />
       <Header />
       <MobileTopBar />
       <main id="conteudo" tabIndex={-1} className="min-h-[100dvh] outline-none">

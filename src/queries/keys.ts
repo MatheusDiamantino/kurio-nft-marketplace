@@ -1,11 +1,5 @@
 import type { CatalogQuery, Network } from '@/api/contracts'
 
-/**
- * Query-key factory. Private data is namespaced under ['private', userId] so
- * (a) caches of different users can never collide and (b) logout/switch can
- * drop everything private with a single `removeQueries({ queryKey: ['private'] })`.
- * The cart is keyed by owner ('guest' or the user id) for the same reason.
- */
 export const keys = {
   catalog: {
     all: ['nfts'] as const,

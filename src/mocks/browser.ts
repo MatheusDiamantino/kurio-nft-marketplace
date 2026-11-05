@@ -13,17 +13,12 @@ import {
   sendStaleNftEvent,
 } from './realtime'
 
-/**
- * Control surface for demos and E2E tests. It only manipulates the *mock
- * server* (data, scenarios, socket transport) — never the app's state. Every
- * effect reaches the UI through REST (MSW handlers) or Socket.IO events.
- */
 export interface KurioMockControl {
   scenarios: typeof SCENARIOS
   latencies: typeof LATENCIES
   getConfig(): MockConfig
   setConfig(patch: Partial<MockConfig>): MockConfig
-  /** Restore seed data + default config. */
+
   reset(): void
   updateNft(id: string, patch: { price?: string; compareAtPrice?: string | null; editions?: Partial<Record<EditionId, number>> }): boolean
   expireSessions(): void
@@ -59,8 +54,6 @@ export async function startMocks() {
   }
   db.resumePendingOrders()
 
-  // Mock-control params are one-shot: strip them so a refresh doesn't re-apply
-  // them (e.g. `?mock-reset=1` must not wipe data again on reload).
   const MOCK_PARAMS = ['mock-reset', 'scenario', 'latency', 'orderResolutionMs']
   if (MOCK_PARAMS.some((p) => params.has(p))) {
     for (const p of MOCK_PARAMS) params.delete(p)
@@ -74,6 +67,17 @@ export async function startMocks() {
     quiet: import.meta.env.PROD,
     serviceWorker: { url: '/mockServiceWorker.js' },
   })
+
+  const RELOAD_FLAG = 'kurio.msw.reloaded'
+  if (!navigator.serviceWorker.controller) {
+    if (!sessionStorage.getItem(RELOAD_FLAG)) {
+      sessionStorage.setItem(RELOAD_FLAG, '1')
+      location.reload()
+      await new Promise(() => {})
+    }
+  } else {
+    sessionStorage.removeItem(RELOAD_FLAG)
+  }
 
   window.__kurio = {
     scenarios: SCENARIOS,

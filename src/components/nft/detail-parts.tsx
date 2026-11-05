@@ -1,8 +1,9 @@
 import { Mail, Star } from 'lucide-react'
-import { Tabs } from 'radix-ui'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { NftDetail } from '@/api/contracts'
 import { LinkedinIcon, TwitterIcon } from '@/components/brand-icons'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useDragScroll } from '@/lib/use-drag-scroll'
 import { NETWORK_LABEL } from './labels'
 
 export function Stars({ rating, className }: { rating: number; className?: string }) {
@@ -68,20 +69,19 @@ export function MetaLines({ nft, className }: { nft: NftDetail; className?: stri
 }
 
 export function DetailTabs({ nft }: { nft: NftDetail }) {
-  const trigger =
-    'border-b-2 border-transparent pb-2 text-base text-cream transition-colors hover:text-brand-accent data-[state=active]:border-brand data-[state=active]:font-bold data-[state=active]:text-brand'
+  const dragRef = useDragScroll<HTMLDivElement>()
   const short = `${nft.contractAddress.slice(0, 6)}...${nft.contractAddress.slice(-4)}`
   return (
-    <Tabs.Root defaultValue="details" className="container-page mt-16 md:mt-20">
-      <Tabs.List aria-label="Informações do NFT" className="scrollbar-none flex gap-8 overflow-x-auto border-b border-line">
-        <Tabs.Trigger value="details" className={trigger}>
+    <Tabs defaultValue="details" className="container-page mt-16 md:mt-20">
+      <TabsList ref={dragRef} aria-label="Informações do NFT" className="scrollbar-none overflow-x-auto">
+        <TabsTrigger value="details">
           Detalhes do NFT
-        </Tabs.Trigger>
-        <Tabs.Trigger value="reviews" className={trigger}>
+        </TabsTrigger>
+        <TabsTrigger value="reviews">
           Avaliações de colecionadores ({nft.reviewsCount})
-        </Tabs.Trigger>
-      </Tabs.List>
-      <Tabs.Content value="details" className="mt-4 flex flex-col gap-5 text-[13px] leading-[22px] text-sand outline-none">
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="details" className="mt-4 flex flex-col gap-5 text-[13px] leading-[22px] text-sand outline-none">
         {nft.longDescription.map((p) => (
           <p key={p.slice(0, 24)}>{p}</p>
         ))}
@@ -103,8 +103,8 @@ export function DetailTabs({ nft }: { nft: NftDetail }) {
             </dd>
           </div>
         </dl>
-      </Tabs.Content>
-      <Tabs.Content value="reviews" className="mt-4 flex flex-col gap-3 text-sm text-sand outline-none">
+      </TabsContent>
+      <TabsContent value="reviews" className="mt-4 flex flex-col gap-3 text-sm text-sand outline-none">
         <p className="flex items-center gap-2 text-cream">
           <Stars rating={nft.rating} className="text-brand" />
           <span>
@@ -112,15 +112,15 @@ export function DetailTabs({ nft }: { nft: NftDetail }) {
           </span>
         </p>
         <p>A leitura completa das avaliações ainda não está disponível nesta demonstração.</p>
-      </Tabs.Content>
-    </Tabs.Root>
+      </TabsContent>
+    </Tabs>
   )
 }
 
 export function DetailSkeleton() {
   return (
     <div aria-hidden>
-      {/* Desktop */}
+
       <div className="container-page mt-6 hidden md:block">
         <Skeleton className="h-4 w-40" />
         <div className="mt-6 flex flex-wrap gap-8 lg:flex-nowrap">
@@ -147,7 +147,7 @@ export function DetailSkeleton() {
           </div>
         </div>
       </div>
-      {/* Mobile */}
+
       <div className="md:hidden">
         <div className="px-7 pt-16">
           <Skeleton className="h-[326px] w-full rounded-[24px]" />

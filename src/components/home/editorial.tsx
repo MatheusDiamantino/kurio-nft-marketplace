@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { ArrowRight } from 'lucide-react'
 import type { CollectionSlug } from '@/api/contracts'
 import { SoonLink } from '@/components/soon'
+import { useDragScroll } from '@/lib/use-drag-scroll'
 
 const PROMOS: { title: string; text: string; image: string; collection: CollectionSlug; tab?: 'new' }[] = [
   {
@@ -20,22 +21,21 @@ const PROMOS: { title: string; text: string; image: string; collection: Collecti
 ]
 
 export function Promos() {
+  const ref = useDragScroll<HTMLElement>()
   return (
-    <section aria-label="Destaques do mercado" className="container-page mt-16 grid gap-6 md:mt-24 lg:grid-cols-2 lg:gap-7">
+    <section ref={ref} aria-label="Destaques do mercado" className="container-page scrollbar-none relative mt-12 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto md:scroll-px-6 md:mt-24 cursor-grab lg:grid lg:cursor-auto lg:grid-cols-2 lg:gap-7 lg:overflow-visible">
       {PROMOS.map((p) => (
-        <article key={p.title} className="relative grid min-h-[250px] grid-cols-[minmax(0,1fr)_minmax(0,1fr)] overflow-hidden rounded-sm bg-surface">
-          <img src={p.image} alt="" width={292} height={250} loading="lazy" decoding="async" className="h-full min-h-[250px] w-full object-cover" />
-          <svg aria-hidden viewBox="0 0 586 250" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 size-full">
-            <path d="M-20 230 C 80 140, 160 260, 300 180" stroke="#d28a4c" strokeOpacity="0.55" strokeWidth="1.5" fill="none" />
-          </svg>
-          <div className="relative flex flex-col items-end justify-center gap-3 px-4 py-6 text-right sm:px-7">
+        <article key={p.title} className="relative flex w-[85%] shrink-0 snap-start flex-col overflow-hidden rounded-sm bg-surface sm:grid sm:min-h-[250px] sm:w-[70%] sm:grid-cols-2 lg:w-auto">
+          <img src={p.image} alt="" width={292} height={250} loading="lazy" decoding="async" className="aspect-[16/10] w-full object-cover object-[center_30%] sm:aspect-auto sm:h-full sm:min-h-[250px] sm:object-center" />
+
+          <div className="relative flex flex-1 flex-col items-start gap-2 px-5 pt-5 pb-6 text-left sm:items-end sm:justify-center sm:gap-3 sm:px-7 sm:py-6 sm:text-right">
             <h2 className="max-w-[260px] text-base leading-6 font-bold text-cream">{p.title}</h2>
-            <p className="max-w-[263px] text-[13px] leading-[22px] text-[#CFB28C">{p.text}</p>
+            <p className="mb-4 max-w-[263px] text-[13px] leading-[22px] text-sand sm:mb-0">{p.text}</p>
             <Link
               to="/"
               search={{ collection: [p.collection], tab: p.tab }}
               hash="catalogo"
-              className="mt-3 inline-flex h-10 w-[140px] items-center justify-center gap-2 rounded-sm bg-brand text-sm font-bold text-ink hover:bg-brand-accent"
+              className="mt-auto inline-flex h-10 w-full items-center justify-center gap-2 rounded-sm bg-brand text-sm font-bold text-ink hover:bg-brand-accent sm:mt-3 sm:w-[140px]"
             >
               Explorar <ArrowRight className="size-4" aria-hidden />
               <span className="sr-only">{p.title}</span>
@@ -55,17 +55,18 @@ const POSTS = [
 ]
 
 export function Blog() {
+  const ref = useDragScroll<HTMLUListElement>()
   return (
     <section aria-labelledby="blog-title" className="container-page mt-16 md:mt-24">
       <header className="text-center">
         <h2 id="blog-title" className="text-2xl font-bold text-cream">
           Diário da Cunhagem
         </h2>
-        <p className="mt-3 text-[13px] text-brand">Histórias, guias e insights para colecionadores sobre o universo da propriedade digital.</p>
+        <p className="mt-3 text-[13px] text-sand">Histórias, guias e insights para colecionadores sobre o universo da propriedade digital.</p>
       </header>
-      <ul className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <ul ref={ref} className="scrollbar-none relative mt-8 flex cursor-grab snap-x snap-mandatory gap-4 overflow-x-auto md:mt-10 md:grid md:cursor-auto md:grid-cols-2 md:gap-6 md:overflow-visible lg:grid-cols-4">
         {POSTS.map((post) => (
-          <li key={post.title}>
+          <li key={post.title} className="w-[78%] shrink-0 snap-start sm:w-[60%] md:w-auto">
             <article className="flex h-full flex-col overflow-hidden rounded-sm bg-surface">
               <img
                 src={post.image}
@@ -85,7 +86,7 @@ export function Blog() {
                   Leitura de {post.read}
                 </p>
                 <h3 className="text-[17px] leading-6 font-bold text-cream">{post.title}</h3>
-                <p className="text-[13px] leading-[22px] text-brand">{post.text}</p>
+                <p className="text-[13px] leading-[22px] text-sand">{post.text}</p>
                 <SoonLink label={`Artigo "${post.title}"`} className="mt-auto pt-1 text-[13px] font-bold text-brand">
                   Ler mais <span aria-hidden>→</span>
                   <span className="sr-only">: {post.title}</span>

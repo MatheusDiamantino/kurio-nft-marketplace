@@ -70,10 +70,6 @@ export function QuantityStepper({
   )
 }
 
-/**
- * Label + control + error/help wiring. The control receives id,
- * aria-invalid and aria-describedby so errors are announced with the field.
- */
 export function Field({
   label,
   required,
@@ -179,7 +175,6 @@ export function Breadcrumb({ items }: { items: { label: string; to?: string }[] 
   )
 }
 
-/** Visually-hidden polite live region for one-off announcements. */
 export function LiveRegion({ message }: { message: string }) {
   const id = useId()
   return (

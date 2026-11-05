@@ -1,6 +1,5 @@
 import { expect, test, USERS } from './fixtures'
 
-/** 4. Favoritos, incluindo falha de mutation e recuperação do estado. */
 test.describe('favoritos', () => {
   test('favoritar persiste para o usuário; falha faz rollback do estado otimista', async ({ app, page }) => {
     await app.open('/')
@@ -12,14 +11,12 @@ test.describe('favoritos', () => {
     await app.reload()
     await expect(page.getByRole('button', { name: /Favoritado|Remover dos favoritos/ })).toHaveAttribute('aria-pressed', 'true')
 
-    // Falha: o coração muda na hora (otimista) e volta ao estado anterior.
     await app.setScenario('favorite-fail')
     await app.goto('/nft/golden-signal-160')
     await page.getByRole('button', { name: /^Favoritar$/ }).click()
     await expect(page.getByText(/Não foi possível favoritar/)).toBeVisible()
     await expect(page.getByRole('button', { name: /^Favoritar$/ })).toHaveAttribute('aria-pressed', 'false')
 
-    // Recuperação: com a API saudável a mesma ação funciona.
     await app.setScenario('default')
     await page.getByRole('button', { name: /^Favoritar$/ }).click()
     await expect(page.getByRole('button', { name: /Favoritado|Remover dos favoritos/ })).toHaveAttribute('aria-pressed', 'true')
@@ -34,7 +31,6 @@ test.describe('favoritos', () => {
   })
 })
 
-/** 5. Carrinho, quantidades, remoção, cupom e persistência após refresh/login. */
 test.describe('carrinho', () => {
   test('quantidades, remoção, cupom inválido/expirado/válido e resumo coerente com a API', async ({ app, page }) => {
     await app.open('/')
@@ -57,17 +53,14 @@ test.describe('carrinho', () => {
     await expect(page.getByTestId('summary-discount')).toContainText('2.683')
     await expect(page.getByTestId('summary-total')).toContainText('24.163 ETH')
 
-    // Quantidade e remoção.
     await page.getByRole('group', { name: 'Quantidade de Ivory Baron #088' }).getByRole('button', { name: 'Diminuir quantidade' }).click()
     await expect(page.getByTestId('summary-subtotal')).toContainText('25.04 ETH')
     await page.getByRole('button', { name: 'Remover Violet Nomad #314 do carrinho' }).click()
     await expect(page.getByTestId('summary-subtotal')).toContainText('16.70 ETH')
 
-    // Remover cupom.
     await page.getByRole('button', { name: 'Remover cupom KURIO10' }).click()
     await expect(page.getByTestId('summary-discount')).not.toContainText('1.67')
 
-    // Persistência após refresh.
     await app.reload()
     await expect(page.getByTestId('summary-subtotal')).toContainText('16.70 ETH')
   })
@@ -81,12 +74,24 @@ test.describe('carrinho', () => {
     await expect(page.getByTestId('summary-subtotal')).toContainText('2.97 ETH')
 
     await page.getByRole('link', { name: 'Conectar e finalizar' }).click()
+    await expect(page).toHaveURL(/\/checkout/)
+    await expect(page.getByText('Golden Beat #207').first()).toBeVisible()
+    await page.getByLabel(/^Nome de exibição/).fill('Visitante')
+    await page.getByLabel(/^Nome de usuário/).fill('visitante')
+    await page.getByLabel(/^Nome do perfil/).fill('visitante')
+    await page.getByLabel(/^Código de indicação/).fill('GUEST-CODE')
+    await page.getByLabel(/^E-mail/).first().fill('visitante@kurio.dev')
+    await page.getByLabel(/^Nome ENS/).fill('visitante')
+    await page.getByRole('radio', { name: 'Coinbase Wallet' }).check()
+    await page.getByRole('button', { name: 'Confirmar compra' }).click()
     await expect(page).toHaveURL(/\/login\?redirect=/)
     await page.getByLabel('E-mail', { exact: true }).fill(USERS.ana.email)
     await page.getByLabel('Senha', { exact: true }).fill(USERS.ana.password)
     await page.getByRole('button', { name: 'Entrar', exact: true }).click()
     await expect(page).toHaveURL(/\/checkout/)
     await expect(page.getByText('Golden Beat #207').first()).toBeVisible()
+    
+    await expect(page.getByLabel(/^Código de indicação/)).toHaveValue('GUEST-CODE')
     await app.goto('/cart')
     await expect(page.getByTestId('summary-subtotal')).toContainText('2.97 ETH')
   })

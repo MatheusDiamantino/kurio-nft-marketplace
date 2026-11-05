@@ -72,9 +72,6 @@ function isNetwork(v: unknown): v is Network {
 }
 
 export const restHandlers = [
-  // -------------------------------------------------------------------------
-  // Auth
-  // -------------------------------------------------------------------------
   http.post(
     api('/auth/register'),
     withNetwork('default', async ({ request }) => {
@@ -134,9 +131,6 @@ export const restHandlers = [
     }),
   ),
 
-  // -------------------------------------------------------------------------
-  // Catalog
-  // -------------------------------------------------------------------------
   http.get(
     api('/nfts'),
     withNetwork('catalog', ({ request }) => {
@@ -181,9 +175,6 @@ export const restHandlers = [
     }),
   ),
 
-  // -------------------------------------------------------------------------
-  // Favorites
-  // -------------------------------------------------------------------------
   http.get(
     api('/favorites'),
     withNetwork('default', ({ request }) => {
@@ -215,9 +206,6 @@ export const restHandlers = [
     ),
   ),
 
-  // -------------------------------------------------------------------------
-  // Cart
-  // -------------------------------------------------------------------------
   http.get(
     api('/cart'),
     withNetwork('default', ({ request }) => {
@@ -314,9 +302,6 @@ export const restHandlers = [
     }),
   ),
 
-  // -------------------------------------------------------------------------
-  // Quote
-  // -------------------------------------------------------------------------
   http.post(
     api('/quote'),
     withNetwork('default', async ({ request }) => {
@@ -331,9 +316,6 @@ export const restHandlers = [
     }),
   ),
 
-  // -------------------------------------------------------------------------
-  // Orders
-  // -------------------------------------------------------------------------
   http.post(
     api('/orders'),
     withNetwork('default', async ({ request }) => {
@@ -346,7 +328,6 @@ export const restHandlers = [
       const body = (await request.json()) as CreateOrderRequest
       const fingerprint = db.orderFingerprint(auth.user.id, body)
 
-      // 1) Idempotent replay.
       const previous = db.findIdempotency(key)
       if (previous) {
         if (previous.userId !== auth.user.id || previous.fingerprint !== fingerprint) {
@@ -356,7 +337,6 @@ export const restHandlers = [
         return HttpResponse.json(db.toOrder(order), { status: 200, headers: { 'Idempotent-Replayed': 'true' } })
       }
 
-      // 2) Validate collector fields.
       const fields: Record<string, string> = {}
       const c = body.collector ?? ({} as CreateOrderRequest['collector'])
       if (!c.displayName?.trim()) fields['collector.displayName'] = 'Informe o nome de exibição.'
@@ -368,7 +348,6 @@ export const restHandlers = [
       const cart = db.resolveCart(auth.user.id, null, false)
       if (!cart || cart.lines.length === 0) return apiError(409, 'QUOTE_STALE', 'Seu carrinho está vazio.')
 
-      // 3) Deterministic "something changed during checkout" scenarios.
       const first = cart.lines[0]
       if (isScenarioActive('price-change-checkout') && nextCount('scenario:price-change') === 1) {
         const nft = db.findNft(first.nftId)!
@@ -378,7 +357,6 @@ export const restHandlers = [
         db.updateNft(first.nftId, { editions: { [first.editionId]: 0 } })
       }
 
-      // 4) Revalidate price, availability, coupon and fee against a fresh quote.
       const fresh = db.buildQuote(cart, body.network)
       const original = db.findQuote(body.quoteId)
       if (fresh.issues.length > 0) {
@@ -388,7 +366,6 @@ export const restHandlers = [
         return apiError(409, 'QUOTE_STALE', 'Os valores do pedido mudaram. Revise e confirme novamente.', { details: { quote: fresh } })
       }
 
-      // 5) Wallet + connection.
       const wallet = db.listWallets(auth.user.id).find((w) => w.id === body.walletId)
       if (!wallet) return apiError(404, 'NOT_FOUND', 'Carteira não encontrada.')
       const connection = db.findConnection(body.connectionId)
@@ -396,7 +373,6 @@ export const restHandlers = [
         return apiError(409, 'WALLET_DISCONNECTED', 'Conecte a carteira novamente para assinar a compra.')
       }
 
-      // 6) Create (pending) + simulated settlement.
       const { scenario, orderResolutionMs } = getConfig()
       const order = db.createOrder({
         userId: auth.user.id,
@@ -410,7 +386,6 @@ export const restHandlers = [
       })
 
       if (scenario === 'order-timeout' && nextCount(`timeout:${key}`) === 1) {
-        // The order WAS created, but the client never sees the response.
         return apiError(504, 'GATEWAY_TIMEOUT', 'O servidor demorou para responder.')
       }
       return HttpResponse.json(db.toOrder(order), { status: 201 })
@@ -443,9 +418,6 @@ export const restHandlers = [
     }),
   ),
 
-  // -------------------------------------------------------------------------
-  // Profile
-  // -------------------------------------------------------------------------
   http.get(
     api('/me/profile'),
     withNetwork('default', ({ request }) => {
@@ -543,9 +515,6 @@ export const restHandlers = [
     }),
   ),
 
-  // -------------------------------------------------------------------------
-  // Wallets
-  // -------------------------------------------------------------------------
   http.get(
     api('/me/wallets'),
     withNetwork('default', ({ request }) => {
@@ -635,7 +604,6 @@ export const restHandlers = [
     }),
   ),
 
-  // Unknown API routes → JSON 404 (never fall through to the SPA HTML).
   http.all(api('/*'), () => apiError(404, 'NOT_FOUND', 'Recurso inexistente.')),
 ]
 

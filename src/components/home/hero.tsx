@@ -25,10 +25,6 @@ function scrollToCatalog() {
   el.focus({ preventScroll: true })
 }
 
-/**
- * Featured slides switcher. No autoplay (WCAG 2.2.2): the user changes the
- * slide with the dots, which are real buttons with aria-current.
- */
 function SlideDots({ index, onChange, className }: { index: number; onChange: (i: number) => void; className?: string }) {
   return (
     <div role="group" aria-label="Destaques" className={cn('flex items-center', className)}>
@@ -39,9 +35,8 @@ function SlideDots({ index, onChange, className }: { index: number; onChange: (i
           onClick={() => onChange(i)}
           aria-label={`Mostrar destaque ${i + 1} de ${SLIDES.length}`}
           aria-current={i === index ? 'true' : undefined}
-          className="group grid size-6 place-items-center rounded-full"
+          className="group grid h-6 w-4 place-items-center rounded-full"
         >
-          {/* 24×24 touch target, 8px visual dot (Figma) */}
           <span
             aria-hidden
             className={cn('size-2 rounded-full bg-brand transition-opacity', i === index ? 'opacity-100' : 'opacity-50 group-hover:opacity-80')}
@@ -52,13 +47,34 @@ function SlideDots({ index, onChange, className }: { index: number; onChange: (i
   )
 }
 
+function SlideTrack({ index, size, priority }: { index: number; size: number; priority?: boolean }) {
+  return (
+    <div
+      className="flex size-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+      style={{ transform: `translateX(-${index * 100}%)` }}
+    >
+      {SLIDES.map((s, i) => (
+        <img
+          key={s.image}
+          src={s.image}
+          alt={i === index ? s.alt : ''}
+          aria-hidden={i !== index}
+          width={size}
+          height={size}
+          fetchPriority={priority && i === 0 ? 'high' : 'auto'}
+          decoding="async"
+          className="size-full shrink-0 object-cover"
+        />
+      ))}
+    </div>
+  )
+}
+
 export function Hero() {
   const [index, setIndex] = useState(0)
-  const slide = SLIDES[index]
 
   return (
     <section aria-label="Boas-vindas" className="container-page">
-      {/* Desktop / tablet */}
       <div className="mt-8 hidden min-h-[450px] items-center gap-10 md:flex lg:pl-10">
         <div className="flex max-w-[600px] flex-1 flex-col">
           <p className="text-sm tracking-[0.1em] text-cream">Bem-vindo à Kurio</p>
@@ -83,29 +99,25 @@ export function Hero() {
           </div>
         </div>
         <div className="relative ml-auto aspect-square w-[min(450px,42vw)] shrink-0 overflow-hidden rounded-[20px] bg-surface">
-          <img
-            key={slide.image}
-            src={slide.image}
-            alt={slide.alt}
-            width={450}
-            height={450}
-            fetchPriority={index === 0 ? 'high' : 'auto'}
-            className="size-full object-cover"
-          />
+          <SlideTrack index={index} size={450} priority />
           <p className="sr-only" aria-live="polite">
             Destaque {index + 1} de {SLIDES.length}
           </p>
         </div>
       </div>
 
-      {/* Mobile card (Figma "Hero Banner") */}
-      <div className="relative mt-4 overflow-hidden rounded-[24px] bg-gradient-to-br from-[#3a2418] via-surface to-surface-dark px-4 py-4 md:hidden">
-        <span aria-hidden className="pointer-events-none absolute -top-16 left-24 size-56 rounded-full bg-cream/[0.04]" />
-        <span aria-hidden className="pointer-events-none absolute -bottom-20 -left-10 size-44 rounded-full bg-cream/[0.04]" />
+      <div className="relative mt-4 overflow-hidden rounded-[24px] bg-gradient-to-br from-hero-from to-hero-to px-4 py-4 md:hidden">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute top-[52%] left-[8%] aspect-square w-[73%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/20"
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute top-[52%] left-[58%] aspect-square w-[73%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/20"
+        />
         <div className="relative flex gap-3">
           <div className="flex min-w-0 flex-1 flex-col">
             <p className="text-xs font-medium text-cream">Bem-vindo à Kurio</p>
-            {/* Only one of the two h1s is rendered at a time (the other is display:none). */}
             <h1 className="mt-2 text-[17px] leading-7 font-bold tracking-[0.03em] text-cream uppercase">Seja dono da cultura digital</h1>
             <p className="mt-2 text-xs leading-[18px] text-sand">Descubra NFTs selecionados de criadores do mundo todo.</p>
             <button
@@ -117,13 +129,9 @@ export function Hero() {
             </button>
           </div>
           <div className="relative w-[138px] shrink-0">
-            <img
-              src={slide.image}
-              alt={slide.alt}
-              width={138}
-              height={138}
-              className="aspect-square w-[138px] rounded-[16px] object-cover"
-            />
+            <div className="aspect-square w-[138px] overflow-hidden rounded-[16px]">
+              <SlideTrack index={index} size={138} />
+            </div>
             <img
               src={SLIDES[(index + 1) % SLIDES.length].image}
               alt=""

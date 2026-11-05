@@ -11,7 +11,6 @@ import { toast } from 'sonner'
 
 const RARITY_LABEL = { raro: 'RARO', lendario: 'LENDÁRIO' } as const
 
-/** Default edition for quick-add from a card: the most available limited edition. */
 const QUICK_EDITION: EditionId = '1-50'
 
 export function NftCard({ nft, priority = false, className }: { nft: NftSummary; priority?: boolean; className?: string }) {
@@ -24,7 +23,7 @@ export function NftCard({ nft, priority = false, className }: { nft: NftSummary;
 
   return (
     <article aria-labelledby={headingId} className={cn('group relative flex flex-col gap-3', className)} data-testid="nft-card">
-      <div className="relative aspect-[258/300] overflow-hidden bg-surface p-[6%]">
+      <div className="relative aspect-[258/300] overflow-hidden rounded-[20px] bg-surface p-[6%]">
         <img
           src={nft.image}
           alt={nft.imageAlt}
@@ -77,7 +76,7 @@ export function NftCard({ nft, priority = false, className }: { nft: NftSummary;
           </Link>
         </div>
       </div>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-0 md:gap-1">
         <h3 id={headingId} className="text-base text-cream">
           <Link to="/nft/$nftId" params={{ nftId: nft.id }} className="hover:text-brand-accent">
             {nft.name}
@@ -92,7 +91,7 @@ export function NftCard({ nft, priority = false, className }: { nft: NftSummary;
 export function NftCardSkeleton() {
   return (
     <div className="flex flex-col gap-3" aria-hidden>
-      <div className="aspect-[258/300] bg-surface p-[6%]">
+      <div className="aspect-[258/300] rounded-[20px] bg-surface p-[6%]">
         <Skeleton className="size-full rounded-[18px]" />
       </div>
       <Skeleton className="h-4 w-3/4" />

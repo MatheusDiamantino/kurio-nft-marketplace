@@ -18,7 +18,6 @@ export function lineProblem(l: CartLine): string | null {
   return null
 }
 
-/** Realtime notices (price / availability) concerning NFTs in the cart. */
 export function CartLiveNotices({ nftIds }: { nftIds: string[] }) {
   const notices = useLiveNotices().filter((n) => nftIds.includes(n.nftId))
   return (

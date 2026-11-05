@@ -7,18 +7,6 @@ import { api } from '@/api/endpoints'
 import { useUser } from '@/auth/use-session'
 import { keys } from './keys'
 
-/**
- * Order placement with idempotency.
- *
- * - The Idempotency-Key is persisted per user in sessionStorage together with
- *   a hash of the request body. Retrying the *same* body (after a timeout,
- *   network error, 504 or a page reload) reuses the key, so the server returns
- *   the order it already created instead of charging twice. A different body
- *   (new quote, wallet, network…) gets a fresh key.
- * - Repeated clicks are collapsed by an in-flight ref + `isPending`.
- * - Transient failures are retried automatically (same key) twice.
- */
-
 const attemptKey = (uid: string) => `kurio.checkout.attempt.${uid}`
 const pendingKey = (uid: string) => `kurio.pendingOrder.${uid}`
 
@@ -37,13 +25,11 @@ function idempotencyKeyFor(uid: string, body: CreateOrderRequest) {
     const stored = JSON.parse(sessionStorage.getItem(attemptKey(uid)) ?? 'null') as AttemptRecord | null
     if (stored && stored.bodyHash === bodyHash) return stored.key
   } catch {
-    /* fall through to a new key */
   }
   const record: AttemptRecord = { key: crypto.randomUUID(), bodyHash }
   try {
     sessionStorage.setItem(attemptKey(uid), JSON.stringify(record))
   } catch {
-    /* memory-only fallback: still unique per click sequence */
   }
   return record.key
 }
@@ -60,14 +46,12 @@ export const pendingOrderStore = {
     try {
       localStorage.setItem(pendingKey(uid), orderId)
     } catch {
-      /* ignore */
     }
   },
   clear(uid: string) {
     try {
       localStorage.removeItem(pendingKey(uid))
     } catch {
-      /* ignore */
     }
   },
 }
@@ -110,7 +94,6 @@ export function usePlaceOrder() {
       try {
         sessionStorage.removeItem(attemptKey(user.id))
       } catch {
-        /* ignore */
       }
       qc.setQueryData(keys.private.order(user.id, order.id), order)
       setPhase('idle')
@@ -134,10 +117,6 @@ export function usePlaceOrder() {
   return { submit, phase, error: mutation.error, isPending: mutation.isPending, reset: () => (mutation.reset(), setPhase('idle')) }
 }
 
-/**
- * A previously created order still pending for this user (survives refresh).
- * While it is pending, checkout must not create another purchase.
- */
 export function usePendingOrder() {
   const user = useUser()
   const id = user ? pendingOrderStore.get(user.id) : null

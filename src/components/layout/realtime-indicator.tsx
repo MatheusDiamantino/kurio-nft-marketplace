@@ -1,10 +1,6 @@
 import { Wifi, WifiOff } from 'lucide-react'
 import { useRealtimeStatus } from '@/realtime/realtime-context'
 
-/**
- * Announces realtime connectivity problems (and recovery) to everyone,
- * including screen-reader users, without relying on color alone.
- */
 export function RealtimeIndicator() {
   const status = useRealtimeStatus()
   const problem = status === 'reconnecting' || status === 'offline'

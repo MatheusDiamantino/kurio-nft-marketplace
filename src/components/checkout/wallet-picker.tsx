@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2, Plug, Unplug } from 'lucide-react'
 import type { Network, Wallet, WalletConnection } from '@/api/contracts'
 import { WalletChip } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { cn } from '@/lib/utils'
 
 export const WALLET_LABEL: Record<Wallet['kind'], string> = {
@@ -59,31 +60,24 @@ export function WalletPicker({
   const connected = connection && connection.walletId === selectedId && connection.network === network
   return (
     <div className="flex flex-col gap-3">
-      <fieldset className="flex flex-col gap-3">
-        <legend className="sr-only">Carteira para pagamento</legend>
-        {/* Figma's first row: informative only (compatible wallets), not a selectable option. */}
+      <div className="flex flex-col gap-3">
         <div className="flex min-h-[45px] flex-wrap items-center gap-3 rounded-sm border border-dashed border-line px-4 py-2">
           <span className="text-xs text-tan">Compatíveis:</span>
           <WalletChip />
         </div>
+        <RadioGroup aria-label="Carteira para pagamento" value={selectedId ?? ''} onValueChange={onSelect} className="gap-3">
         {wallets.map((w) => {
           const checked = w.id === selectedId
           return (
             <label
               key={w.id}
+              htmlFor={`checkout-wallet-${w.id}`}
               className={cn(
                 'flex min-h-[45px] cursor-pointer items-center gap-3 rounded-sm border px-4 py-2 text-[15px] text-cream',
                 checked ? 'border-cream' : 'border-line',
               )}
             >
-              <input
-                type="radio"
-                name="checkout-wallet"
-                value={w.id}
-                checked={checked}
-                onChange={() => onSelect(w.id)}
-                className="size-4 shrink-0 accent-[var(--kurio-primary)]"
-              />
+              <RadioGroupItem id={`checkout-wallet-${w.id}`} value={w.id} />
               <span className="flex min-w-0 flex-col">
                 <span>
                   {WALLET_LABEL[w.kind]} <span className="text-sand">· {w.slot === 'primary' ? 'principal' : 'secundária'}</span>
@@ -95,7 +89,8 @@ export function WalletPicker({
             </label>
           )
         })}
-      </fieldset>
+        </RadioGroup>
+      </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-sm bg-surface px-3 py-2" aria-live="polite">
         {connected ? (

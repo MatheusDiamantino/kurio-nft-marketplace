@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { Dialog as DialogPrimitive } from 'radix-ui'
 import { X } from 'lucide-react'
@@ -8,6 +8,7 @@ import { useSession } from '@/auth/use-session'
 import { LoginForm, RegisterForm, SocialLogin, type AuthVariant } from '@/components/auth/auth-forms'
 import { useMediaQuery } from '@/components/auth/use-media-query'
 import { cn } from '@/lib/utils'
+import { HomePage } from '@/pages/home'
 import { PRIVATE_PATH_PREFIXES } from '@/routes/paths'
 
 type Mode = 'login' | 'register'
@@ -36,11 +37,12 @@ function useAuthFlow() {
   const redirect = useRedirectTarget()
   const session = useSession()
 
-  const go = (replace = true) => void navigate({ to: redirect ?? '/', replace })
-  // Closing without authenticating: a private target would bounce back here, so go home.
+  const go = (replace = true) => {
+    const to = redirect ?? '/'
+    void navigate({ to, replace, viewTransition: to !== '/' })
+  }
   const isPrivateTarget = !!redirect && PRIVATE_PATH_PREFIXES.some((p) => redirect.startsWith(p))
 
-  // Already authenticated (e.g. direct access to /login): continue the flow.
   useEffect(() => {
     if (session) void navigate({ to: redirect ?? '/', replace: true })
   }, [session, navigate, redirect])
@@ -49,7 +51,7 @@ function useAuthFlow() {
     toast.success(`Bem-vindo(a), ${s.user.displayName}!`)
     go()
   }
-  return { redirect, onSuccess, close: () => (isPrivateTarget ? void navigate({ to: '/' }) : go(false)) }
+  return { redirect, onSuccess, close: () => (isPrivateTarget ? void navigate({ to: '/', viewTransition: false }) : go(false)) }
 }
 
 function ModeSwitch({ mode, redirect }: { mode: Mode; redirect?: string }) {
@@ -68,42 +70,35 @@ function ModeSwitch({ mode, redirect }: { mode: Mode; redirect?: string }) {
   )
 }
 
-/** Decorative, inert reproduction of the home hero behind the desktop modal. */
 function Backdrop() {
   return (
-    <div aria-hidden inert className="container-page pointer-events-none relative min-h-[620px] select-none">
-      <div className="grid grid-cols-[1fr_450px] items-start gap-10 pt-3">
-        <div className="pt-[76px] pl-12">
-          <p className="text-sm tracking-[0.1em] text-cream">Bem-vindo à Kurio</p>
-          <p className="mt-6 text-[43px] leading-[70px] font-bold tracking-[0.05em] text-cream">
-            SEJA DONO DO FUTURO
-            <br />
-            DA ARTE DIGITAL
-          </p>
-          <p className="mt-4 max-w-md text-sm leading-6 text-sand">Descubra NFTs selecionados de criadores emergentes e consagrados.</p>
-          <span className="mt-10 inline-block rounded-sm bg-brand px-7 py-2.5 font-bold text-ink">EXPLORAR</span>
-        </div>
-        <img src="/nfts/emerald-ape.webp" alt="" width={450} height={450} className="size-[450px] rounded-[20px] object-cover" />
-      </div>
+    <div aria-hidden inert className="pointer-events-none select-none">
+      <HomePage />
     </div>
   )
 }
 
+const CLOSE_MS = 160
+
 function DesktopAuth({ mode, children, onClose, redirect }: { mode: Mode; children: ReactNode; onClose: () => void; redirect?: string }) {
+  const [open, setOpen] = useState(true)
+  const close = () => {
+    setOpen(false)
+    window.setTimeout(onClose, CLOSE_MS)
+  }
   return (
     <>
       <Backdrop />
-      <DialogPrimitive.Root open onOpenChange={(open) => !open && onClose()}>
+      <DialogPrimitive.Root open={open} onOpenChange={(next) => !next && close()}>
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/60" />
+          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/60 duration-150 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
           <DialogPrimitive.Content
             data-testid="auth-dialog"
             onOpenAutoFocus={(e) => {
-              // Start on the first field instead of the close button.
               e.preventDefault()
               ;(e.currentTarget as HTMLElement | null)?.querySelector<HTMLInputElement>('form input')?.focus()
             }}
-            className="fixed top-[max(2rem,calc(50%-330px))] left-1/2 z-50 max-h-[calc(100dvh-4rem)] w-[500px] max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-y-auto bg-surface pt-12 shadow-2xl outline-none"
+            className="fixed top-[max(2rem,calc(50%-330px))] left-1/2 z-50 duration-150 ease-out data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 max-h-[calc(100dvh-4rem)] w-[500px] max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-y-auto bg-surface pt-12 shadow-2xl outline-none"
           >
             <DialogPrimitive.Close
               className="absolute top-4 right-4 grid size-8 place-items-center rounded-sm text-brand hover:text-brand-accent"

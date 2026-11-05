@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ChangePasswordRequest, Order, UpdateProfileRequest, UpsertWalletRequest, User, Wallet, WalletSlot } from '@/api/contracts'
 import { api } from '@/api/endpoints'
 import { sessionStore } from '@/auth/session-store'
@@ -9,13 +9,27 @@ function useUserId() {
   return useUser()?.id ?? 'anonymous'
 }
 
-export function useProfile() {
-  const uid = useUserId()
-  return useQuery({
+export const profileQuery = (uid: string) =>
+  queryOptions({
     queryKey: keys.private.profile(uid),
     queryFn: ({ signal }) => api.profile.get({ signal }),
-    enabled: uid !== 'anonymous',
   })
+
+export const walletsQuery = (uid: string) =>
+  queryOptions({
+    queryKey: keys.private.wallets(uid),
+    queryFn: ({ signal }) => api.wallets.list({ signal }),
+  })
+
+export const orderQuery = (uid: string, orderId: string) =>
+  queryOptions({
+    queryKey: keys.private.order(uid, orderId),
+    queryFn: ({ signal }) => api.orders.get(orderId, { signal }),
+  })
+
+export function useProfile() {
+  const uid = useUserId()
+  return useQuery({ ...profileQuery(uid), enabled: uid !== 'anonymous' })
 }
 
 function useProfileWriter() {
@@ -48,12 +62,7 @@ export function useChangePassword() {
 
 export function useWallets() {
   const uid = useUserId()
-  return useQuery({
-    queryKey: keys.private.wallets(uid),
-    queryFn: ({ signal }) => api.wallets.list({ signal }),
-    enabled: uid !== 'anonymous',
-    select: (d) => d.items,
-  })
+  return useQuery({ ...walletsQuery(uid), enabled: uid !== 'anonymous', select: (d) => d.items })
 }
 
 export function useUpsertWallet() {
@@ -73,11 +82,9 @@ export function useUpsertWallet() {
 export function useOrder(orderId: string) {
   const uid = useUserId()
   return useQuery({
-    queryKey: keys.private.order(uid, orderId),
-    queryFn: ({ signal }) => api.orders.get(orderId, { signal }),
+    ...orderQuery(uid, orderId),
     enabled: uid !== 'anonymous',
-    // Socket.IO pushes status changes; this slow poll is only a safety net
-    // while the order is pending (e.g. realtime transport unavailable).
+
     refetchInterval: (q) => ((q.state.data as Order | undefined)?.status === 'pending' ? 15_000 : false),
   })
 }

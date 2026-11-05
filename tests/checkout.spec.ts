@@ -17,11 +17,10 @@ async function setup(app: App, scenario?: Parameters<App['open']>[1]['scenario']
   await app.seedFigmaCart()
 }
 
-/** 6. Compra completa, do catálogo ao recibo confirmado. */
 test('compra completa do catálogo ao recibo confirmado', async ({ app, page }) => {
   await app.open('/')
   await app.loginViaApi('ana')
-  // Catálogo → detalhe → carrinho
+  
   await page.getByTestId('catalog-grid').getByRole('link', { name: 'Golden Beat #207', exact: true }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Golden Beat #207' })).toBeVisible()
   await page.getByRole('radio', { name: '1/50' }).click()
@@ -31,7 +30,6 @@ test('compra completa do catálogo ao recibo confirmado', async ({ app, page }) 
   await page.getByRole('link', { name: 'Conectar e finalizar' }).click()
   await expect(page).toHaveURL(/\/checkout/)
 
-  // Validação dos campos do layout antes da revisão.
   await page.getByLabel(/^Código de indicação/).fill('')
   await page.getByRole('button', { name: 'Revisar pedido' }).click()
   await expect(page.getByLabel(/^Código de indicação/)).toHaveAttribute('aria-invalid', 'true')
@@ -49,16 +47,14 @@ test('compra completa do catálogo ao recibo confirmado', async ({ app, page }) 
   await expect(page.getByTestId('receipt-total')).toContainText('1.006 ETH')
   await expect(page.getByTestId('order-tx')).toContainText('0x')
 
-  // O recibo é um snapshot: mudar o catálogo depois não altera seus valores.
   await app.mock((k) => k.updateNft('golden-beat-207', { price: '5.00' }))
   await app.reload()
   await expect(page.getByTestId('receipt-total')).toContainText('1.006 ETH')
-  // Itens comprados saíram do carrinho.
+  
   await app.goto('/cart')
   await expect(page.getByText('Seu carrinho está vazio')).toBeVisible()
 })
 
-/** 7. Falha de pagamento, clique repetido e timeout com recuperação do mesmo pedido. */
 test.describe('falhas no pagamento', () => {
   test('pagamento recusado preserva o carrinho', async ({ app, page }) => {
     await setup(app, 'payment-declined')
@@ -89,7 +85,7 @@ test.describe('falhas no pagamento', () => {
     await expect(page).toHaveURL(/\/orders\/ord_/, { timeout: 15_000 })
     const orderId = page.url().split('/orders/')[1]
     await expect(page.getByRole('heading', { name: 'Seus NFTs agora estão na sua carteira' })).toBeVisible({ timeout: 15_000 })
-    // Apenas um pedido existe e é o mesmo exibido.
+    
     const orders = await page.evaluate(async () => {
       const s = JSON.parse(localStorage.getItem('kurio.session')!)
       const r = await fetch('/api/orders', { headers: { authorization: `Bearer ${s.token}` } })
@@ -99,7 +95,6 @@ test.describe('falhas no pagamento', () => {
   })
 })
 
-/** 9. Alteração de preço/disponibilidade via Socket.IO durante o checkout. */
 test.describe('tempo real no checkout', () => {
   test('preço muda durante a revisão: confirmação bloqueada até aceitar os novos valores', async ({ app, page }) => {
     await setup(app)

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { WalletForm } from '@/components/account/wallet-form'
 import { ErrorState } from '@/components/shared'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useWallets } from '@/queries/account'
 
@@ -70,19 +72,21 @@ export function WalletsPage() {
               {!showSecondary && <p className="mt-1 text-[13px] text-sand">Você ainda não adicionou uma carteira secundária.</p>}
             </div>
             <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 text-sm text-cream">
-                <input
-                  type="checkbox"
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="same-as-primary"
                   checked={sameAsPrimary}
                   disabled={!primary}
-                  onChange={(e) => {
-                    setSameAsPrimary(e.target.checked)
-                    if (e.target.checked) setAddingSecondary(true)
+                  onCheckedChange={(checked) => {
+                    const on = checked === true
+                    setSameAsPrimary(on)
+                    if (on) setAddingSecondary(true)
                   }}
-                  className="size-4 appearance-none rounded-full border border-brand checked:border-[5px] checked:bg-ink disabled:opacity-40"
                 />
-                Igual à carteira principal
-              </label>
+                <Label htmlFor="same-as-primary" className="text-sm">
+                  Igual à carteira principal
+                </Label>
+              </div>
               {!showSecondary && (
                 <button
                   type="button"

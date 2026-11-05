@@ -1,16 +1,13 @@
 import { expect, isMobile, test } from './fixtures'
 
-/** 2. Acesso direto ao detalhe e tratamento de recurso inexistente. */
 test.describe('detalhe do NFT', () => {
   test('acesso direto mostra informações, edição esgotada e limite de quantidade', async ({ app, page }) => {
     await app.open('/nft/emerald-ape-042')
     await expect(page.getByRole('heading', { level: 1, name: 'Emerald Ape #042' })).toBeVisible()
     await expect(page).toHaveTitle(/Emerald Ape #042/)
 
-    // A edição 1/1 está esgotada no seed → desabilitada e anunciada.
     await expect(page.getByRole('radio', { name: '1/1 (esgotada)' })).toBeDisabled()
 
-    // 1/10 tem disponibilidade limitada: o "+" para no máximo.
     await page.getByRole('radio', { name: '1/10' }).click()
     const plus = page.getByRole('button', { name: 'Aumentar quantidade' })
     for (let i = 0; i < 15 && (await plus.isEnabled()); i++) await plus.click()
