@@ -30,7 +30,7 @@ export function Promos() {
           </svg>
           <div className="relative flex flex-col items-end justify-center gap-3 px-4 py-6 text-right sm:px-7">
             <h2 className="max-w-[260px] text-base leading-6 font-bold text-cream">{p.title}</h2>
-            <p className="max-w-[263px] text-[13px] leading-[22px] text-brand">{p.text}</p>
+            <p className="max-w-[263px] text-[13px] leading-[22px] text-[#CFB28C">{p.text}</p>
             <Link
               to="/"
               search={{ collection: [p.collection], tab: p.tab }}

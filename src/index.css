@@ -21,7 +21,6 @@
   --kurio-secondary: #b39463;
   --kurio-text-secondary: #cfb28c;
   --kurio-foreground: #f5f1eb;
-  --kurio-text-primary: #f7f3ec;
   --kurio-danger: #ff8a73;
   --kurio-success: #8fd19e;
 
@@ -59,7 +58,8 @@
   --color-brand-accent: var(--kurio-accent);
   --color-tan: var(--kurio-secondary);
   --color-sand: var(--kurio-text-secondary);
-  --color-cream: var(--kurio-text-primary);
+  /* Body/heading text uses Figma "color/foreground" (#F5F1EB). */
+  --color-cream: var(--kurio-foreground);
   --color-danger: var(--kurio-danger);
   --color-success: var(--kurio-success);
 
