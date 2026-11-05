@@ -46,6 +46,7 @@ test.describe('acessibilidade', () => {
   test('login operável só pelo teclado com erros associados aos campos', async ({ app, page }) => {
     await app.open('/login')
     const email = page.getByLabel('E-mail', { exact: true })
+    await email.fill('')
     await email.focus()
     await page.keyboard.type('nao-e-email')
     await page.keyboard.press('Enter')

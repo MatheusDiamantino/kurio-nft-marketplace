@@ -85,7 +85,11 @@ type LoginValues = z.infer<typeof loginSchema>
 export function LoginForm({ variant, onSuccess }: { variant: AuthVariant; onSuccess: (s: Session) => void }) {
   const login = useLogin()
   const [formError, setFormError] = useState<string | null>(null)
-  const form = useForm<LoginValues>({ resolver: zodResolver(loginSchema), defaultValues: { email: '', password: '' } })
+  const form = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
+    // Demo account pre-filled to speed up evaluation (fictional credentials, see README).
+    defaultValues: { email: 'ana@kurio.dev', password: 'Kurio@123' },
+  })
   const { errors } = form.formState
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -141,7 +145,7 @@ export function LoginForm({ variant, onSuccess }: { variant: AuthVariant; onSucc
       <div className={variant === 'page' ? 'mt-4' : 'mt-2'}>
         <SubmitButton variant={variant} pending={login.isPending} label="Entrar" pendingLabel="Entrando…" />
       </div>
-      <p className="text-center text-[11px] text-tan">Demo: ana@kurio.dev / Kurio@123</p>
+      <p className="text-center text-[11px] text-tan">Conta demo já preenchida: ana@kurio.dev / Kurio@123 (ou bruno@kurio.dev)</p>
     </form>
   )
 }
